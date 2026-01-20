@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
 import { config } from '../config.js'
+import { getMockKalshiMarkets } from './mockMarkets.js'
 
 export interface KalshiRawMarket {
   id: string
@@ -124,6 +125,7 @@ function calculateDataFreshness(createdDate?: string): {
 /**
  * Fetch all featured/hot markets from Kalshi for dashboard display
  * Public API - no authentication required
+ * Uses mock data in dev when API is unavailable
  */
 export async function getFeaturedMarkets(): Promise<KalshiSignal[]> {
   try {
@@ -146,9 +148,9 @@ export async function getFeaturedMarkets(): Promise<KalshiSignal[]> {
 
     console.log(`[kalshi] 📊 retrieved ${allMarkets.length} total markets from API`)
 
-    // Filter to active, liquid markets - prioritize by volume
+    // Filter to active markets - prioritize by volume (no strict volume minimum)
     const activeMarkets = allMarkets
-      .filter(m => m.status === 'active' && (m.volume || 0) > 5000)
+      .filter(m => m.status === 'active')
       .sort((a, b) => (b.volume || 0) - (a.volume || 0))
       .slice(0, 20)
 
@@ -175,6 +177,12 @@ export async function getFeaturedMarkets(): Promise<KalshiSignal[]> {
       console.error('[kalshi] ⚠️  Connection reset - unstable network')
     } else if (errorMsg.includes('timeout')) {
       console.error('[kalshi] ⚠️  Request timeout - API response delayed')
+    }
+
+    // Use mock data in development when API is unavailable
+    if (config.isDev) {
+      console.log('[kalshi] 💡 using mock data for local development')
+      return getMockKalshiMarkets()
     }
 
     return []

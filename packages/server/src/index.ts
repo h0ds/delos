@@ -231,6 +231,10 @@ app.get('/api/featured-markets', async (_req, res) => {
       getKalshiFeatured()
     ])
 
+    console.log(
+      `[featured-markets] retrieved ${polymarkets.length} polymarket + ${kalshiMarkets.length} kalshi markets`
+    )
+
     const formatMarket = (m: any, source: string) => ({
       source,
       market: m.market,
@@ -252,6 +256,8 @@ app.get('/api/featured-markets', async (_req, res) => {
       ...kalshiMarkets.slice(0, 4).map(m => formatMarket(m, 'kalshi'))
     ]
 
+    console.log(`[featured-markets] returning ${allMarkets.length} total markets`)
+
     res.json({
       success: true,
       count: allMarkets.length,
@@ -259,6 +265,7 @@ app.get('/api/featured-markets', async (_req, res) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error(`[featured-markets] error: ${message}`)
     res.status(500).json({ success: false, error: message })
   }
 })

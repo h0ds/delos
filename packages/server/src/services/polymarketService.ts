@@ -2,6 +2,7 @@ import axios from 'axios'
 import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
 import { config } from '../config.js'
+import { getMockPolymarkets } from './mockMarkets.js'
 
 export interface PolymarketRawMarket {
   id: string
@@ -54,9 +55,9 @@ const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 // CLOB API (newer, real-time order book)
 // Try multiple possible endpoints
 const CLOB_API_URLS = [
-  'https://clob.polymarket.com/api', // Primary
-  'https://clob.polymarket.com', // Fallback 1
-  'https://markets-api.polymarket.com' // Fallback 2
+  'https://gamma-api.polymarket.com', // Primary - actually works better for featured markets
+  'https://markets.polymarket.com/api', // Alternative
+  'https://clob.polymarket.com/api' // Legacy
 ]
 
 // Create agent instances for timeout handling
@@ -66,6 +67,7 @@ const httpsAgent = new HttpsAgent({ timeout: 5000 })
 /**
  * Fetch from modern CLOB API for real-time market data
  * Falls back to Gamma API if CLOB is unavailable
+ * Uses mock data in dev when all APIs fail
  */
 export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
   try {
@@ -158,6 +160,13 @@ export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
     return featuredMarkets
   } catch (error) {
     console.error('[polymarket:featured] ❌ ERROR:', error instanceof Error ? error.message : error)
+
+    // Use mock data in development when APIs are unavailable
+    if (config.isDev) {
+      console.log('[polymarket] 💡 using mock data for local development')
+      return getMockPolymarkets()
+    }
+
     return []
   }
 }
@@ -272,18 +281,19 @@ function calculateDataFreshness(createdDate?: string): {
   warning?: string
 } {
   if (!createdDate) {
-    return { isStale: true, daysOld: 999, warning: 'Date unknown' }
+    return { isStale: false, daysOld: 0 }
   }
 
   const date = new Date(createdDate)
   const now = new Date()
   const daysOld = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (daysOld > 365) {
+  // Only mark as stale if more than 5 years old
+  if (daysOld > 1825) {
     return {
       isStale: true,
       daysOld,
-      warning: `Market from ${daysOld} days ago (${date.getFullYear()})`
+      warning: `Market from ${daysOld} days ago`
     }
   }
 
