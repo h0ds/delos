@@ -98,12 +98,13 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
           )}
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-end align-right gap-1">
-          {market.status && (
-            <div className="flex items-center justify-end">
+        {/* Status Badge + Source Indicator + Research Button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {/* Status Badge */}
+            {market.status && (
               <span
-                className={`text-xs font-mono px-3 py-1 rounded-full border ${
+                className={`text-xs font-mono px-2 py-1 rounded-full border ${
                   market.status === 'active'
                     ? 'bg-bullish/10 text-bullish border-bullish/30'
                     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
@@ -111,14 +112,19 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
               >
                 {market.status === 'active' ? 'Open' : 'Closed'}
               </span>
-            </div>
-          )}
+            )}
 
-          {/* Oracle Visualization - Bottom Right Corner (Interactive) */}
+            {/* Source Badge - Inline */}
+            <span className="text-xs font-mono px-2 py-1 rounded-full bg-primary/10 text-primary/80 border border-primary/30">
+              polymarket
+            </span>
+          </div>
+
+          {/* Oracle Visualization - Research Button */}
           <button
             onClick={() => onQuickResearch(market.question)}
             disabled={loading}
-            className="bottom-3 right-0 z-10 opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Research this market"
           >
             <OracleVisualization size={24} />

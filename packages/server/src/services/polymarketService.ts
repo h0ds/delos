@@ -49,87 +49,34 @@ export interface PolymarketSignal {
   }
 }
 
-// Gamma API (legacy, has stale data)
+// Gamma API for fetching active markets
+// Per official docs: https://docs.polymarket.com/quickstart/fetching-data
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
-// CLOB API (newer, real-time order book)
-// Try multiple possible endpoints
-const CLOB_API_URLS = [
-  'https://gamma-api.polymarket.com', // Primary - actually works better for featured markets
-  'https://markets.polymarket.com/api', // Alternative
-  'https://clob.polymarket.com/api' // Legacy
-]
+// Live markets use /events endpoint with active=true&closed=false filters
+const GAMMA_EVENTS_ENDPOINT = `${GAMMA_API_BASE}/events`
+const GAMMA_MARKETS_ENDPOINT = `${GAMMA_API_BASE}/markets`
 
 // Create agent instances for timeout handling
 const httpAgent = new HttpAgent({ timeout: 5000 })
 const httpsAgent = new HttpsAgent({ timeout: 5000 })
 
 /**
- * Fetch from modern CLOB API for real-time market data
- * Falls back to Gamma API if CLOB is unavailable
- * Uses mock data in dev when all APIs fail
+ * Fetch live active markets from Polymarket
+ * Uses the Gamma API /events endpoint with active=true&closed=false filters
+ * Per official docs: https://docs.polymarket.com/quickstart/fetching-data
+ *
+ * NO AUTHENTICATION REQUIRED
  */
 export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
   try {
-    console.log('[polymarket] 🔍 fetching featured markets from CLOB API...')
+    console.log('[polymarket] 🔍 fetching live featured markets from Gamma /events endpoint...')
 
-    // Try CLOB API endpoints in order
-    for (const clobUrl of CLOB_API_URLS) {
-      try {
-        console.log(`[polymarket-clob] 📡 trying ${clobUrl}/markets...`)
-        const response = await axios.get(`${clobUrl}/markets`, {
-          params: {
-            limit: 100
-          },
-          timeout: 5000,
-          httpAgent,
-          httpsAgent
-        })
-
-        // Handle different response structures
-        let allMarkets = []
-        if (response.data.markets && Array.isArray(response.data.markets)) {
-          allMarkets = response.data.markets
-        } else if (Array.isArray(response.data)) {
-          allMarkets = response.data
-        }
-
-        if (allMarkets.length > 0) {
-          console.log(`[polymarket-clob] 📊 retrieved ${allMarkets.length} markets from CLOB API`)
-
-          // Filter and transform markets from CLOB
-          const activeMarkets = allMarkets
-            .filter((m: any) => {
-              // Ensure market has essential data
-              return (
-                m.question &&
-                m.outcomePrices &&
-                (m.active === true || m.status === 'active') &&
-                m.volume24h > 0
-              )
-            })
-            .sort((a: any, b: any) => (b.volume24h || 0) - (a.volume24h || 0))
-            .slice(0, 8)
-
-          if (activeMarkets.length > 0) {
-            console.log(`[polymarket-clob] ✅ found ${activeMarkets.length} active markets`)
-            return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
-          }
-        }
-      } catch (endpointError) {
-        console.warn(
-          `[polymarket-clob] ⚠️  ${clobUrl} failed`,
-          endpointError instanceof Error ? endpointError.message : String(endpointError)
-        )
-        // Continue to next endpoint
-      }
-    }
-
-    console.log('[polymarket] 📡 all CLOB endpoints failed, falling back to Gamma API...')
-
-    // Fallback to Gamma API (historical/secondary data)
-    const response = await axios.get(`${GAMMA_API_BASE}/markets`, {
+    // Fetch active, non-closed events (live markets)
+    const response = await axios.get(GAMMA_EVENTS_ENDPOINT, {
       params: {
+        active: true,
+        closed: false,
         limit: 100
       },
       timeout: 10000,
@@ -137,33 +84,59 @@ export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
       httpsAgent
     })
 
-    const allMarkets: PolymarketRawMarket[] = Array.isArray(response.data)
-      ? response.data
-      : response.data.data || []
+    // Extract markets from events
+    const allEvents = Array.isArray(response.data) ? response.data : response.data.data || []
+    console.log(`[polymarket] 📊 retrieved ${allEvents.length} active events`)
 
-    console.log(`[polymarket] 📊 retrieved ${allMarkets.length} total markets from Gamma API`)
+    // Flatten: each event has nested markets
+    const allMarkets: PolymarketRawMarket[] = []
+    allEvents.forEach((event: any) => {
+      if (event.markets && Array.isArray(event.markets)) {
+        allMarkets.push(
+          ...event.markets.map((market: any) => ({
+            ...market,
+            eventId: event.id,
+            eventSlug: event.slug,
+            eventTitle: event.title
+          }))
+        )
+      }
+    })
 
-    // Filter markets: show open first, then closed with high volume
+    console.log(`[polymarket] 📊 extracted ${allMarkets.length} total markets from events`)
+
+    // Filter and sort by volume
+    // Only include truly active markets (not closed/resolved)
     const activeMarkets = allMarkets
-      .sort((a, b) => {
-        const aOpen = !a.closed ? 1 : 0
-        const bOpen = !b.closed ? 1 : 0
-        if (aOpen !== bOpen) return bOpen - aOpen
-        return (b.volumeNum || 0) - (a.volumeNum || 0)
+      .filter((m: any) => {
+        return m.question && m.outcomePrices && m.closed === false && m.active === true
+      })
+      .sort((a: any, b: any) => {
+        const aVol = parseFloat(a.volume24hr || a.volume || '0')
+        const bVol = parseFloat(b.volume24hr || b.volume || '0')
+        return bVol - aVol
       })
       .slice(0, 8)
 
-    console.log(`[polymarket] ✅ filtered to ${activeMarkets.length} featured markets`)
+    console.log(`[polymarket] ✅ filtered to ${activeMarkets.length} featured live markets`)
 
-    const featuredMarkets = activeMarkets.map(rawMarket => rawMarketToSignal(rawMarket, ''))
+    if (activeMarkets.length > 0) {
+      return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
+    }
 
-    return featuredMarkets
+    // If no live markets found, use mock data
+    console.log('[polymarket] ⚠️  no live markets found, using mock data')
+    if (config.isDev) {
+      return getMockPolymarkets()
+    }
+
+    return []
   } catch (error) {
     console.error('[polymarket:featured] ❌ ERROR:', error instanceof Error ? error.message : error)
+    console.log('[polymarket] 💡 falling back to mock data for local development')
 
     // Use mock data in development when APIs are unavailable
     if (config.isDev) {
-      console.log('[polymarket] 💡 using mock data for local development')
       return getMockPolymarkets()
     }
 
@@ -172,76 +145,47 @@ export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
 }
 
 /**
- * Search for markets matching a query using CLOB API
+ * Search for markets matching a query using Gamma API /events endpoint
  */
 export async function getPolymarketMarkets(query: string): Promise<PolymarketSignal[]> {
   try {
     console.log(`[polymarket] 🔍 searching markets for query: "${query}"`)
 
-    // Try CLOB API endpoints in order
-    for (const clobUrl of CLOB_API_URLS) {
-      try {
-        const response = await axios.get(`${clobUrl}/markets`, {
-          params: {
-            limit: 50
-          },
-          timeout: 5000,
-          httpAgent,
-          httpsAgent
-        })
-
-        let allMarkets = []
-        if (response.data.markets && Array.isArray(response.data.markets)) {
-          allMarkets = response.data.markets
-        } else if (Array.isArray(response.data)) {
-          allMarkets = response.data
-        }
-
-        if (allMarkets.length > 0) {
-          const relevantMarkets = allMarkets
-            .filter((market: any) => market.active && !market.closed)
-            .filter((market: any) => isRelevantToQuery(market as PolymarketRawMarket, query))
-            .map((market: any) => rawMarketToSignal(market, query))
-            .sort((a: any, b: any) => b.relevance - a.relevance)
-            .slice(0, 5)
-
-          if (relevantMarkets.length > 0) {
-            console.log(
-              `[polymarket-clob] 📊 found ${relevantMarkets.length} relevant markets for "${query}"`
-            )
-            return relevantMarkets
-          }
-        }
-      } catch (endpointError) {
-        console.warn(
-          `[polymarket-clob:search] ⚠️  ${clobUrl} failed`,
-          endpointError instanceof Error ? endpointError.message : String(endpointError)
-        )
-      }
-    }
-
-    console.log('[polymarket] 📡 all CLOB endpoints failed, falling back to Gamma API...')
-
-    // Fallback to Gamma API
-    const response = await axios.get(`${GAMMA_API_BASE}/markets`, {
+    // Fetch active events
+    const response = await axios.get(GAMMA_EVENTS_ENDPOINT, {
       params: {
-        limit: 50,
-        order: 'volume24hr'
+        active: true,
+        closed: false,
+        limit: 200
       },
       timeout: 10000,
       httpAgent,
       httpsAgent
     })
 
-    const allMarkets: PolymarketRawMarket[] = Array.isArray(response.data)
-      ? response.data
-      : response.data.data || []
+    // Extract markets from events
+    const allEvents = Array.isArray(response.data) ? response.data : response.data.data || []
+    const allMarkets: PolymarketRawMarket[] = []
 
+    allEvents.forEach((event: any) => {
+      if (event.markets && Array.isArray(event.markets)) {
+        allMarkets.push(
+          ...event.markets.map((market: any) => ({
+            ...market,
+            eventId: event.id,
+            eventSlug: event.slug,
+            eventTitle: event.title
+          }))
+        )
+      }
+    })
+
+    // Filter by query relevance
     const relevantMarkets = allMarkets
-      .filter(market => market.active && !market.closed)
-      .filter(market => isRelevantToQuery(market, query))
-      .map(market => rawMarketToSignal(market, query))
-      .sort((a, b) => b.relevance - a.relevance)
+      .filter((market: any) => market.question && market.outcomePrices)
+      .filter((market: any) => isRelevantToQuery(market as PolymarketRawMarket, query))
+      .map((market: any) => rawMarketToSignal(market, query))
+      .sort((a: any, b: any) => b.relevance - a.relevance)
       .slice(0, 5)
 
     console.log(`[polymarket] 📊 found ${relevantMarkets.length} relevant markets for "${query}"`)
