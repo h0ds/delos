@@ -113,13 +113,13 @@ export function KalshiCard({ market, onQuickResearch, loading }) {
         )}
 
         {/* Quick Research Button */}
-        <Button
+        <button
           onClick={() => onQuickResearch(market.question)}
           disabled={loading}
           className="w-full font-mono text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed h-8 rounded-lg"
         >
           Research
-        </Button>
+        </button>
       </div>
     </div>
   )
