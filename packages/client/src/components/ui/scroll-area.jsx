@@ -1,51 +1,44 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+import * as React from 'react'
+import { cn } from '@/lib/utils'
 
-import { cn } from "@/lib/utils"
+/**
+ * ScrollArea - Simple scrollable container
+ * Using native overflow with custom scrollbar styling (no Base UI primitive needed)
+ */
+function ScrollArea({ className, children, orientation = 'vertical', ...props }) {
+  const orientationClass =
+    orientation === 'horizontal'
+      ? 'overflow-x-auto overflow-y-hidden'
+      : 'overflow-y-auto overflow-x-hidden'
 
-function ScrollArea({
-  className,
-  children,
-  ...props
-}) {
   return (
-    <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn("relative", className)} {...props}>
-      <ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1">
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  );
-}
-
-function ScrollBar({
-  className,
-  orientation = "vertical",
-  ...props
-}) {
-  return (
-    <ScrollAreaPrimitive.ScrollAreaScrollbar
-      data-slot="scroll-area-scrollbar"
-      orientation={orientation}
+    <div
+      data-slot="scroll-area"
       className={cn(
-        "flex touch-none p-px transition-colors select-none",
-        orientation === "vertical" &&
-          "h-full w-2.5 border-l border-l-transparent",
-        orientation === "horizontal" &&
-          "h-2.5 flex-col border-t border-t-transparent",
+        'relative size-full rounded-[inherit]',
+        orientationClass,
+        'scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border/60 hover:scrollbar-thumb-border/80',
+        'transition-[color,box-shadow] outline-none',
         className
       )}
-      {...props}>
-      <ScrollAreaPrimitive.ScrollAreaThumb
-        data-slot="scroll-area-thumb"
-        className="bg-border relative flex-1 rounded-full" />
-    </ScrollAreaPrimitive.ScrollAreaScrollbar>
-  );
+      {...props}
+    >
+      {children}
+    </div>
+  )
+}
+
+/**
+ * ScrollBar - Custom scrollbar styling component
+ * Note: Actual scrollbar rendering is handled by CSS (scrollbar-* utilities)
+ * This component is kept for API compatibility with previous interface
+ */
+function ScrollBar({ className, orientation = 'vertical', ...props }) {
+  // This component is a no-op - scrollbars are styled via Tailwind CSS utilities
+  // Kept for backwards compatibility with existing code
+  return null
 }
 
 export { ScrollArea, ScrollBar }

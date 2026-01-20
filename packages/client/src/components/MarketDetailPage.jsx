@@ -6,6 +6,7 @@ import { PolymarketIcon, KalshiIcon } from './MarketIcons'
 import { ProbabilityChart } from './charts/ProbabilityChart'
 import { VolumeChart } from './charts/VolumeChart'
 import { LiquidityCard } from './charts/LiquidityCard'
+import { RelatedSignalsSection } from './RelatedSignalsSection'
 
 export function MarketDetailPage({
   market,
@@ -13,7 +14,8 @@ export function MarketDetailPage({
   onQuickResearch,
   onCompare,
   allMarkets,
-  onSelectMarket
+  onSelectMarket,
+  relatedSignals = []
 }) {
   if (!market) return null
 
@@ -161,7 +163,11 @@ export function MarketDetailPage({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <VolumeChart volume={market.volume24h} />
+                  <VolumeChart
+                    volume={market.volume24h}
+                    marketId={market.market}
+                    source={market.source}
+                  />
                 </CardContent>
               </Card>
             )}
@@ -219,6 +225,11 @@ export function MarketDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Related Signals Section */}
+      {relatedSignals && relatedSignals.length > 0 && (
+        <RelatedSignalsSection market={market} signals={relatedSignals} />
+      )}
 
       {/* Related Markets Section */}
       {allMarkets && (

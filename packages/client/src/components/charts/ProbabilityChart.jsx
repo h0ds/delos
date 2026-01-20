@@ -8,10 +8,28 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts'
+import { BinaryOutcomeBar } from './BinaryOutcomeBar'
 
 export function ProbabilityChart({ outcomes = [] }) {
   if (!outcomes || outcomes.length === 0) return null
 
+  // Check if this is a binary outcome (Yes/No, True/False, etc.)
+  const isBinary =
+    outcomes.length === 2 &&
+    (outcomes.some(o => o.name.toLowerCase() === 'yes') ||
+      outcomes.some(o => o.name.toLowerCase() === 'true') ||
+      outcomes.some(o => o.name.toLowerCase() === 'no') ||
+      outcomes.some(o => o.name.toLowerCase() === 'false'))
+
+  if (isBinary) {
+    return (
+      <div className="w-full">
+        <BinaryOutcomeBar outcomes={outcomes} />
+      </div>
+    )
+  }
+
+  // Multi-outcome bar chart
   const data = outcomes.map(outcome => ({
     name: outcome.name.length > 15 ? outcome.name.substring(0, 15) + '...' : outcome.name,
     fullName: outcome.name,

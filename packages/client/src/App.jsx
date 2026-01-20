@@ -14,6 +14,7 @@ import { PolymarketIcon, KalshiIcon } from '@/components/MarketIcons'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
 import { MarketDetailPage } from '@/components/MarketDetailPage'
 import { MarketComparisonPage } from '@/components/MarketComparisonPage'
+import { MarketFilterPanel } from '@/components/MarketFilterPanel'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', 'detail', or 'compare'
@@ -24,6 +25,7 @@ function App() {
   const [signals, setSignals] = useState([])
   const [markets, setMarkets] = useState([])
   const [initialMarkets, setInitialMarkets] = useState([])
+  const [filteredMarkets, setFilteredMarkets] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchedQuery, setSearchedQuery] = useState('')
@@ -269,6 +271,7 @@ function App() {
                 onCompare={handleStartComparison}
                 allMarkets={initialMarkets}
                 onSelectMarket={handleMarketSelect}
+                relatedSignals={signals}
               />
             </div>
           ) : (
@@ -344,6 +347,13 @@ function App() {
                         </div>
                       </div>
 
+                      {/* Market Filter Panel */}
+                      <MarketFilterPanel
+                        markets={initialMarkets}
+                        onFilter={setFilteredMarkets}
+                        onReset={() => setFilteredMarkets([])}
+                      />
+
                       {/* Polymarket Section */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 px-1">
@@ -351,7 +361,7 @@ function App() {
                           <h2 className="text-sm font-mono text-muted-foreground">Polymarket</h2>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {initialMarkets
+                          {(filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
                             .filter(m => m.source === 'polymarket' || !m.source)
                             .slice(0, 4)
                             .map((market, i) => (
@@ -378,7 +388,7 @@ function App() {
                           <h2 className="text-sm font-mono text-muted-foreground">Kalshi</h2>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {initialMarkets
+                          {(filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
                             .filter(m => m.source === 'kalshi')
                             .slice(0, 4)
                             .map((market, i) => (

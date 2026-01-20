@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import {
   AreaChart,
   Area,
@@ -7,26 +8,27 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts'
+import { getMarketHistory } from '@/lib/marketHistory'
 
-export function VolumeChart({ volume = 0 }) {
-  // Generate mock historical volume data (last 7 days)
-  const generateVolumeData = () => {
-    const data = []
-    const today = new Date()
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const variance = Math.random() * 0.4 + 0.8 // 80-120% of current volume
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        volume: Math.round(volume * variance)
-      })
+export function VolumeChart({ volume = 0, marketId = null, source = 'polymarket' }) {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (marketId) {
+        // Try to fetch real historical data
+        const history = await getMarketHistory(marketId, source)
+        setData(history)
+      } else {
+        // Generate mock data if no marketId provided
+        setData(generateMockHistory(7, volume))
+      }
     }
-    return data
-  }
 
-  const data = generateVolumeData()
-  const maxVolume = Math.max(...data.map(d => d.volume))
+    loadData()
+  }, [marketId, source, volume])
+
+  const maxVolume = Math.max(...data.map(d => d.volume), 1)
 
   const formatVolume = value => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
@@ -46,7 +48,7 @@ export function VolumeChart({ volume = 0 }) {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
           <XAxis
-            dataKey="date"
+            dataKey="dateDisplay"
             tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
             textAnchor="end"
             height={60}
@@ -78,4 +80,21 @@ export function VolumeChart({ volume = 0 }) {
       </ResponsiveContainer>
     </div>
   )
+}
+
+function generateMockHistory(days, volume = 1500000) {
+  const data = []
+  const today = new Date()
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    const variance = Math.random() * 0.4 + 0.8
+    data.push({
+      dateDisplay: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      volume: Math.round(volume * variance)
+    })
+  }
+
+  return data
 }

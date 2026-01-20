@@ -25,7 +25,7 @@ export function LiquidityCard({ liquidity = 0, volume = 0, isPolymarket = true }
     <Card className="border-border/40 bg-card/40">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-mono text-muted-foreground flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
+          <Activity className="h-4 w-4 text-primary text-xs" />
           {isPolymarket ? 'Liquidity' : 'Open Interest'}
         </CardTitle>
       </CardHeader>
