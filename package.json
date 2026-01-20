@@ -1,0 +1,21 @@
+{
+  "name": "delos",
+  "version": "1.0.0",
+  "description": "Make Better Decisions - Signal Intelligence for Prediction Markets",
+  "private": true,
+  "workspaces": [
+    "packages/client",
+    "packages/server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @delos/client\" \"npm run dev -w @delos/server\"",
+    "dev:client": "npm run dev -w @delos/client",
+    "dev:server": "npm run dev -w @delos/server",
+    "build": "npm run build -w @delos/client && npm run build -w @delos/server",
+    "lint": "npm run lint -w @delos/client",
+    "preview": "npm run preview -w @delos/client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

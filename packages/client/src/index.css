@@ -1,0 +1,386 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Backgrounds */
+  --color-background: oklch(0.08 0.01 260);
+  --color-card: oklch(0.1 0.01 260);
+  --color-popover: oklch(0.08 0.01 260);
+
+  /* Foreground / Text */
+  --color-foreground: oklch(0.93 0.01 260);
+  --color-card-foreground: oklch(0.93 0.01 260);
+  --color-popover-foreground: oklch(0.93 0.01 260);
+  --color-primary-foreground: oklch(0.93 0.01 260);
+  --color-secondary-foreground: oklch(0.93 0.01 260);
+  --color-accent-foreground: oklch(0.93 0.01 260);
+  --color-destructive-foreground: oklch(0.93 0.01 260);
+
+  /* UI Elements - Rich Blue Primary */
+  --color-primary: oklch(0.5 0.25 250);
+  --color-secondary: oklch(0.18 0.01 260);
+  --color-muted: oklch(0.18 0.01 260);
+  --color-muted-foreground: oklch(0.6 0.01 260);
+  --color-accent: oklch(0.18 0.01 260);
+  --color-destructive: oklch(0.55 0.2 25);
+  --color-border: oklch(0.22 0.01 260);
+  --color-input: oklch(0.22 0.01 260);
+  --color-ring: oklch(0.5 0.25 250);
+
+  /* Sentiment & Status Colors (Bold, Contrasting) */
+  --color-bullish: oklch(0.6 0.2 145); /* Green #22c55e */
+  --color-bearish: oklch(0.55 0.2 25); /* Red #ef4444 */
+  --color-neutral: oklch(0.6 0.01 260); /* Slate #94a3b8 */
+
+  /* Impact Level Colors (Bold, Contrasting) */
+  --color-impact-high: oklch(0.55 0.2 25); /* Red */
+  --color-impact-med: oklch(0.7 0.15 60); /* Yellow #eab308 */
+  --color-impact-low: oklch(0.55 0.15 250); /* Purple #8b5cf6 */
+
+  /* Chart Colors (Data Visualization) */
+  --color-chart-1: oklch(0.5 0.25 250); /* Blue - Primary */
+  --color-chart-2: oklch(0.6 0.2 145); /* Green - Secondary */
+  --color-chart-3: oklch(0.7 0.15 60); /* Yellow - Medium */
+  --color-chart-4: oklch(0.55 0.15 250); /* Purple - Low */
+  --color-chart-5: oklch(0.55 0.2 25); /* Red - High/Bearish */
+
+  --radius: 0.375rem;
+  --font-mono: 'Hedvig Letters Sans', sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+}
+
+@layer utilities {
+  /* Fade In Animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes fadeInRight {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Scale & Pulse Animations */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes subtlePulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px oklch(0.5 0.25 250 / 0.15);
+    }
+    50% {
+      box-shadow: 0 0 30px oklch(0.5 0.25 250 / 0.25);
+    }
+  }
+
+  @keyframes countUp {
+    from {
+      transform: translateY(4px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes gradientShift {
+    0% {
+      opacity: 0.02;
+    }
+    50% {
+      opacity: 0.08;
+    }
+    100% {
+      opacity: 0.02;
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes gradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* Animation Utility Classes */
+  .animate-in-subtle {
+    animation: fadeInUp 0.4s ease-out forwards;
+  }
+
+  .animate-fade-in-slow {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-count {
+    animation: countUp 0.3s ease-out forwards;
+  }
+
+  .animate-pulse-subtle {
+    animation: subtlePulse 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  /* Stagger Animation for Lists */
+  .stagger-item {
+    animation: fadeInUp 0.4s ease-out forwards;
+  }
+
+  .stagger-item:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-item:nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .stagger-item:nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .stagger-item:nth-child(4) {
+    animation-delay: 150ms;
+  }
+  .stagger-item:nth-child(5) {
+    animation-delay: 200ms;
+  }
+  .stagger-item:nth-child(6) {
+    animation-delay: 250ms;
+  }
+  .stagger-item:nth-child(7) {
+    animation-delay: 300ms;
+  }
+  .stagger-item:nth-child(8) {
+    animation-delay: 350ms;
+  }
+}
+
+::selection {
+  background: oklch(0.5 0.25 250 / 0.3);
+}
+
+.glow {
+  box-shadow: 0 0 20px oklch(0.5 0.25 250 / 0.15);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px oklch(0.65 0.2 145 / 0.5);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(oklch(0.22 0.01 260 / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.22 0.01 260 / 0.5) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Semantic Text Color Classes */
+.text-bullish {
+  color: var(--color-bullish);
+}
+
+.text-bearish {
+  color: var(--color-bearish);
+}
+
+.text-neutral {
+  color: var(--color-neutral);
+}
+
+.bg-bullish-subtle {
+  background-color: oklch(0.15 0.04 145 / 0.5);
+}
+
+.bg-bearish-subtle {
+  background-color: oklch(0.15 0.08 25 / 0.5);
+}
+
+.bg-neutral-subtle {
+  background-color: oklch(0.15 0.01 260 / 0.5);
+}
+
+.border-bullish {
+  border-color: var(--color-bullish);
+}
+
+.border-bearish {
+  border-color: var(--color-bearish);
+}
+
+.border-neutral {
+  border-color: var(--color-neutral);
+}
+
+/* Impact Level Classes */
+.text-impact-high {
+  color: var(--color-impact-high);
+}
+
+.text-impact-med {
+  color: var(--color-impact-med);
+}
+
+.text-impact-low {
+  color: var(--color-impact-low);
+}
+
+.bg-impact-high-subtle {
+  background-color: oklch(0.15 0.08 25 / 0.5);
+}
+
+.bg-impact-med-subtle {
+  background-color: oklch(0.15 0.1 60 / 0.5);
+}
+
+.bg-impact-low-subtle {
+  background-color: oklch(0.15 0.06 250 / 0.5);
+}
+
+/* Modern Button Styles - Global */
+@layer components {
+  .btn-modern {
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-semibold text-sm font-mono transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+
+    /* Base gradient background */
+    @apply bg-gradient-to-r from-primary via-primary to-primary/80;
+    @apply text-primary-foreground;
+
+    /* Subtle border for depth */
+    @apply border border-primary/40;
+
+    /* Shadow for elevation */
+    @apply shadow-lg shadow-primary/30;
+
+    /* Hover state: lift + enhanced shadow */
+    @apply hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 hover:border-primary/60;
+
+    /* Overflow hidden for inner glow effect */
+    @apply overflow-hidden;
+  }
+
+  /* Inner glow effect on hover using before pseudo */
+  .btn-modern-secondary {
+    @apply relative inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-semibold text-sm font-mono transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+
+    /* Ghost/outline style */
+    @apply bg-card/50 border border-border/50 text-foreground;
+
+    /* Shadow for subtle depth */
+    @apply shadow-sm shadow-transparent;
+
+    /* Hover state */
+    @apply hover:bg-card/80 hover:border-border/80 hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5;
+
+    @apply overflow-hidden;
+  }
+
+  /* Icon button variant */
+  .btn-icon {
+    @apply relative inline-flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+
+    @apply bg-card/50 border border-border/50 text-foreground;
+    @apply hover:bg-card/80 hover:border-primary/50 hover:text-primary;
+
+    @apply overflow-hidden;
+  }
+}
