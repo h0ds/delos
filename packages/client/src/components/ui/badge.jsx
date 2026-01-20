@@ -29,7 +29,15 @@ const badgeVariants = cva(
         success: 'bg-success/20 text-success hover:bg-success/30',
         warning: 'bg-warning/20 text-warning hover:bg-warning/30',
         bullish: 'bg-bullish/20 text-bullish hover:bg-bullish/30',
-        bearish: 'bg-bearish/20 text-bearish hover:bg-bearish/30'
+        bearish: 'bg-bearish/20 text-bearish hover:bg-bearish/30',
+        /* No-Border Squircle Variants (Coss UI style) */
+        'squircle-bullish': 'bg-bullish/10 text-bullish border-0 hover:bg-bullish/15',
+        'squircle-bearish': 'bg-bearish/10 text-bearish border-0 hover:bg-bearish/15',
+        'squircle-primary': 'bg-primary/10 text-primary border-0 hover:bg-primary/15',
+        'squircle-muted': 'bg-muted/20 text-muted-foreground border-0 hover:bg-muted/30',
+        'squircle-success': 'bg-success/10 text-success border-0 hover:bg-success/15',
+        'squircle-warning': 'bg-warning/10 text-warning border-0 hover:bg-warning/15',
+        'squircle-info': 'bg-info/10 text-info border-0 hover:bg-info/15'
       }
     }
   }

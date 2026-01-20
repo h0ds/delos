@@ -1,10 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react'
 import { CandlestickChart } from './CandlestickChart'
 import {
   BadgeUnified,
-  BadgeList,
   BADGE_TYPES,
   getSentimentBadgeType,
   getVolatilityBadgeType,
@@ -30,7 +27,7 @@ const validatePercent = (value, decimals = 2) => {
 }
 
 /**
- * Comprehensive trend analysis visualization with Bento Grid layout
+ * Data-dense trend analysis visualization (no unnecessary borders/padding)
  * @param {Object} props
  * @param {Array} props.priceHistory - Array of TrendPoint objects
  * @param {Object} props.analytics - MarketAnalytics object
@@ -45,21 +42,17 @@ export function TrendAnalysisChart({
 }) {
   if (!priceHistory || priceHistory.length === 0 || !analytics) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          No Price History Available
-        </CardContent>
-      </Card>
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        No Price History Available
+      </div>
     )
   }
 
   if (!analytics.predictions || analytics.predictions.length < 2) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Insufficient Data For Trend Analysis
-        </CardContent>
-      </Card>
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        Insufficient Data For Trend Analysis
+      </div>
     )
   }
 
@@ -90,41 +83,34 @@ export function TrendAnalysisChart({
   const volatilityBadgeType = getVolatilityBadgeType(analytics.volatility || 0)
   const confidenceBadgeType = getConfidenceBadgeType(prediction24h.confidence)
 
-  // Market source badge styling
+  // Source colors for buttons
   const sourceColors = {
     polymarket: {
-      bg: 'bg-gradient-to-r from-blue-500/10 to-blue-600/10',
-      border: 'border-blue-500/30',
-      text: 'text-blue-400'
+      bg: 'bg-blue-500/15',
+      text: 'text-blue-300',
+      button: 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
     },
     kalshi: {
-      bg: 'bg-gradient-to-r from-emerald-500/10 to-emerald-600/10',
-      border: 'border-emerald-500/30',
-      text: 'text-emerald-400'
+      bg: 'bg-emerald-500/15',
+      text: 'text-emerald-300',
+      button: 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
     }
   }
 
   const sourceStyle = sourceColors[source] || sourceColors.polymarket
 
   /**
-   * Metric Cell Component - Only renders if data is valid
+   * Compact Metric Component - No padding, no borders, minimal spacing
    */
-  const MetricCell = ({ label, value, badge, highlight = false, colSpan = 1 }) => {
+  const MetricCell = ({ label, value, badge, highlight = false }) => {
     const displayValue = typeof value === 'function' ? value() : value
 
     // Don't render if value is null (invalid data)
     if (displayValue === null && !badge) return null
 
     return (
-      <div
-        className={`rounded-lg p-3 border transition-all ${
-          highlight
-            ? 'bg-primary/5 border-primary/30 hover:border-primary/50'
-            : 'bg-muted/20 border-border/30 hover:border-border/50'
-        }`}
-        style={{ gridColumn: `span ${colSpan}` }}
-      >
-        <p className="text-xs text-muted-foreground font-mono mb-2">{label}</p>
+      <div className="space-y-0.5">
+        <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight">{label}</p>
         {displayValue !== null && (
           <p
             className={`text-sm font-semibold font-mono ${highlight ? 'text-primary' : 'text-foreground'}`}
@@ -132,53 +118,53 @@ export function TrendAnalysisChart({
             {displayValue}
           </p>
         )}
-        {badge && <div className="mt-2">{badge}</div>}
+        {badge && <div>{badge}</div>}
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
-      {/* Header with Market Source Badge */}
-      <div className={`rounded-lg p-4 border ${sourceStyle.bg} ${sourceStyle.border}`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Trend Analysis</h2>
-          <div className="flex gap-2 items-center">
-            <Badge variant="outline" className={`${sourceStyle.text} text-xs font-mono uppercase`}>
-              {source}
-            </Badge>
-            <BadgeUnified
-              type={
-                prediction24h.direction === 'up'
-                  ? BADGE_TYPES.TRENDING_UP
-                  : prediction24h.direction === 'down'
-                    ? BADGE_TYPES.TRENDING_DOWN
-                    : BADGE_TYPES.NEUTRAL
-              }
-              label={prediction24h.direction.toUpperCase()}
-            />
-          </div>
+      {/* Header with Source Badge Button */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Trend Analysis</h2>
+        <div className="flex gap-2 items-center">
+          {/* Source Badge - Prominent Button Style */}
+          <button
+            disabled
+            className={`text-xs font-mono px-3 py-1.5 rounded-squircle font-semibold uppercase tracking-wide ${sourceStyle.button} transition-colors cursor-default`}
+          >
+            {source}
+          </button>
+          {/* Trend Direction */}
+          <BadgeUnified
+            type={
+              prediction24h.direction === 'up'
+                ? BADGE_TYPES.TRENDING_UP
+                : prediction24h.direction === 'down'
+                  ? BADGE_TYPES.TRENDING_DOWN
+                  : BADGE_TYPES.NEUTRAL
+            }
+            label={prediction24h.direction.toUpperCase()}
+          />
         </div>
       </div>
 
-      {/* Bento Grid Layout - Price & Predictions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {/* Price Metrics - 4 columns, compact */}
+      <div className="grid grid-cols-4 gap-2 text-xs">
         <MetricCell
-          label="Current Price"
+          label="Current"
           value={() => validateNumber(priceHistory[priceHistory.length - 1]?.value, 4)}
           highlight
         />
         <MetricCell
-          label="Predicted (24h)"
+          label="Predicted 24h"
           value={() => validateNumber(prediction24h.predictedValue, 4)}
           highlight
         />
         <MetricCell
           label="Change"
-          value={() => {
-            const change = prediction24h.changePercent
-            return validatePercent(change, 2)
-          }}
+          value={() => validatePercent(prediction24h.changePercent, 2)}
           highlight={prediction24h.changePercent > 0}
         />
         <MetricCell
@@ -188,17 +174,21 @@ export function TrendAnalysisChart({
         />
       </div>
 
-      {/* Support & Resistance - Only show if both values exist */}
+      {/* Support & Resistance - Compact 2 columns */}
       {prediction24h.supportLevel && prediction24h.resistanceLevel && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg p-3 border bg-bullish/5 border-bullish/30 hover:border-bullish/50">
-            <p className="text-xs text-muted-foreground font-mono mb-1">Support</p>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
+              Support
+            </p>
             <p className="text-sm font-semibold font-mono text-bullish">
               {validateNumber(prediction24h.supportLevel, 4)}
             </p>
           </div>
-          <div className="rounded-lg p-3 border bg-bearish/5 border-bearish/30 hover:border-bearish/50">
-            <p className="text-xs text-muted-foreground font-mono mb-1">Resistance</p>
+          <div>
+            <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
+              Resistance
+            </p>
             <p className="text-sm font-semibold font-mono text-bearish">
               {validateNumber(prediction24h.resistanceLevel, 4)}
             </p>
@@ -209,33 +199,27 @@ export function TrendAnalysisChart({
       {/* Candlestick Chart (Professional OHLC) */}
       <CandlestickChart data={candleData} title="Price Action" />
 
-      {/* Sentiment Analysis - Bento Grid */}
+      {/* Sentiment Alignment Alert - Compact */}
       {sentimentDirection !== 'neutral' && (
-        <div
-          className={`rounded-lg p-4 border ${
-            sentimentDirection === 'aligned'
-              ? 'bg-bullish/5 border-bullish/30'
-              : 'bg-bearish/5 border-bearish/30'
-          }`}
-        >
-          <div className="flex items-start gap-3">
+        <div className={`rounded-lg p-3 ${sourceStyle.bg}`}>
+          <div className="flex items-start gap-2.5">
             {sentimentDirection === 'aligned' ? (
               <>
-                <CheckCircle className="w-5 h-5 text-bullish mt-0.5 flex-shrink-0" />
-                <div>
+                <CheckCircle className="w-4 h-4 text-bullish mt-0.5 flex-shrink-0" />
+                <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-bullish">Sentiment & Price Aligned</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Market sentiment aligns with price action. Strong predictive signal.
+                  <p className="text-xs text-muted-foreground">
+                    Market sentiment aligns with price action.
                   </p>
                 </div>
               </>
             ) : (
               <>
-                <AlertCircle className="w-5 h-5 text-bearish mt-0.5 flex-shrink-0" />
-                <div>
+                <AlertCircle className="w-4 h-4 text-bearish mt-0.5 flex-shrink-0" />
+                <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-bearish">Sentiment & Price Diverging</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Market sentiment diverges from price movement. Potential reversal ahead.
+                  <p className="text-xs text-muted-foreground">
+                    Market sentiment diverges from price movement.
                   </p>
                 </div>
               </>
@@ -244,44 +228,43 @@ export function TrendAnalysisChart({
         </div>
       )}
 
-      {/* Sentiment Metrics - Only show valid values */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      {/* Sentiment Metrics - 3 compact columns */}
+      <div className="grid grid-cols-3 gap-2 text-xs">
         <MetricCell
-          label="Sentiment Score"
+          label="Sentiment"
           value={() => validateNumber(sentimentScore, 2)}
           badge={<BadgeUnified type={sentimentBadgeType} label="" showIcon />}
           highlight
         />
         {validateNumber(priceCorrelation, 3) !== null && (
-          <MetricCell label="Price Correlation" value={() => validateNumber(priceCorrelation, 3)} />
+          <MetricCell label="Correlation" value={() => validateNumber(priceCorrelation, 3)} />
         )}
         {validatePercent(predictiveValue, 0) !== null && (
-          <MetricCell label="Predictive Value" value={() => validatePercent(predictiveValue, 0)} />
+          <MetricCell label="Predictive" value={() => validatePercent(predictiveValue, 0)} />
         )}
       </div>
 
-      {/* Volatility & Risk - Compact layout */}
-      <div className={`rounded-lg p-4 border ${sourceStyle.bg} ${sourceStyle.border}`}>
-        <div className="flex items-center justify-between mb-3">
+      {/* Volatility - Compact inline */}
+      <div className={`rounded-lg p-3 ${sourceStyle.bg}`}>
+        <div className="flex items-center justify-between gap-2 mb-2">
           <p className="text-sm font-semibold">Volatility</p>
           <BadgeUnified type={volatilityBadgeType} label="" showIcon />
         </div>
-        <div className="w-full h-2 bg-border/40 rounded-full overflow-hidden mb-3">
+        <div className="w-full h-1.5 bg-border/30 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all"
             style={{ width: `${Math.min(100, (analytics.volatility || 0) * 2)}%` }}
           />
         </div>
-        <p className="text-sm font-semibold font-mono text-primary">
+        <p className="text-xs font-mono text-primary mt-1">
           {validatePercent(analytics.volatility, 2)}
         </p>
       </div>
 
-      {/* Time-based Changes - Only show if values exist */}
+      {/* Time-based Changes - 3 compact columns */}
       {analytics.changeMetrics && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 text-xs">
           {['1h', '24h', '7d'].map((label, idx) => {
-            const key = `change${label}`.replace('change', 'change')
             const keys = ['change1h', 'change24h', 'change7d']
             const value = analytics.changeMetrics?.[keys[idx]] || 0
             const validated = validatePercent(value, 2)
@@ -289,11 +272,10 @@ export function TrendAnalysisChart({
             if (validated === null) return null
 
             return (
-              <div
-                key={label}
-                className={`rounded-lg p-3 border bg-muted/20 border-border/30 hover:border-border/50 text-center`}
-              >
-                <p className="text-xs text-muted-foreground font-mono mb-1">{label}</p>
+              <div key={label} className="text-center">
+                <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
+                  {label}
+                </p>
                 <p
                   className={`text-sm font-semibold font-mono ${
                     value > 0 ? 'text-bullish' : 'text-bearish'

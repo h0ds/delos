@@ -3,6 +3,7 @@
 ## Local Development
 
 ### Prerequisites
+
 - Node.js 20+
 - npm 10+
 
@@ -26,6 +27,7 @@ cp packages/client/.env.example packages/client/.env
 Configure for your setup:
 
 **`packages/server/.env`:**
+
 ```bash
 NODE_ENV=development
 PORT=3333
@@ -34,6 +36,7 @@ NEWS_API_KEY=your_key_from_newsapi.org
 ```
 
 **`packages/client/.env`:**
+
 ```bash
 VITE_SOCKET_URL=http://localhost:3333
 ```
@@ -65,6 +68,7 @@ docker-compose up -d
 ```
 
 Accessing:
+
 - Client: http://localhost:5173
 - Server: http://localhost:3333
 
@@ -99,22 +103,26 @@ NEWS_API_KEY=your_production_key
 ### Deployment Steps
 
 1. **Clone repository:**
+
    ```bash
    git clone https://github.com/yourusername/sigint.git
    cd sigint
    ```
 
 2. **Build Docker images:**
+
    ```bash
    docker-compose build
    ```
 
 3. **Run with environment variables:**
+
    ```bash
    docker-compose up -d
    ```
 
 4. **Configure reverse proxy (Nginx):**
+
    ```nginx
    upstream sigint_api {
      server localhost:3333;
@@ -171,10 +179,18 @@ NEWS_API_KEY=your_production_key
 **Server (`.env`):**
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `NODE_ENV` | Environment | `production` |
+| `NODE_ENV` | Environment | `production` or `development` |
 | `PORT` | Server port | `3333` |
 | `CORS_ORIGIN` | Allowed origins | `https://yourdomain.com` |
 | `NEWS_API_KEY` | NewsAPI key | (get from newsapi.org) |
+| `AI_API_PROVIDER` | AI provider | `deepseek`, `openai`, or `anthropic` |
+| `AI_API_KEY` | AI service API key | (get from provider) |
+| `POLYMARKET_API_KEY` | Polymarket API key | (optional, Gamma API works without key) |
+| `KALSHI_API_KEY` | Kalshi API key | (optional, public API available) |
+| `ENABLE_NEWSAPI` | Enable NewsAPI source | `true` or `false` |
+| `ENABLE_GOOGLE_NEWS` | Enable Google News source | `true` or `false` |
+| `ENABLE_REDDIT` | Enable Reddit source | `true` or `false` |
+| `USE_MOCK_DATA` | Force mock data for testing | `false` (default) |
 
 **Client (build-time):**
 | Variable | Purpose | Example |
@@ -212,11 +228,13 @@ docker-compose up -d
 ### Heroku
 
 Create `Procfile`:
+
 ```
 web: node packages/server/dist/index.js
 ```
 
 Deploy:
+
 ```bash
 heroku create your-app-name
 heroku config:set NEWS_API_KEY=your_key
@@ -255,6 +273,7 @@ Point `VITE_SOCKET_URL` to your backend server.
 ### Connection Issues
 
 Check `CORS_ORIGIN` matches your frontend URL:
+
 ```bash
 curl -H "Origin: http://localhost:5173" http://localhost:3333/api/status
 ```
@@ -278,5 +297,6 @@ kill -9 <PID>
 ## Support
 
 For issues or questions:
+
 - GitHub Issues: [project/issues](https://github.com/yourusername/sigint/issues)
 - Discussions: [project/discussions](https://github.com/yourusername/sigint/discussions)

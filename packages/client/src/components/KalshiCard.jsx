@@ -154,19 +154,19 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
           <div className="flex items-center gap-2">
             {liveMarket.status && (
               <span
-                className={`text-xs font-mono px-2 py-1 rounded-full border ${
+                className={`text-xs font-mono px-2.5 py-1.5 rounded-squircle transition-all ${
                   liveMarket.status === 'active'
-                    ? 'bg-bullish/10 text-bullish border-bullish/30'
-                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                    ? 'bg-bullish/10 text-bullish hover:bg-bullish/15'
+                    : 'bg-warning/10 text-warning hover:bg-warning/15'
                 }`}
               >
                 {liveMarket.status === 'active' ? 'Active' : 'Closed'}
               </span>
             )}
 
-            {/* Live Indicator */}
+            {/* Live Indicator - Squircle Style */}
             {update && (
-              <span className="text-xs font-mono px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 flex items-center gap-1">
+              <span className="text-xs font-mono px-2.5 py-1.5 rounded-squircle bg-primary/10 text-primary flex items-center gap-1 transition-all hover:bg-primary/15">
                 <Zap className="w-3 h-3" />
                 Live
               </span>
