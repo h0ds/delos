@@ -195,6 +195,28 @@
     }
   }
 
+  @keyframes flipInX {
+    0% {
+      opacity: 0;
+      transform: perspective(1000px) rotateX(90deg);
+    }
+    100% {
+      opacity: 1;
+      transform: perspective(1000px) rotateX(0deg);
+    }
+  }
+
+  @keyframes flipOutX {
+    0% {
+      opacity: 1;
+      transform: perspective(1000px) rotateX(0deg);
+    }
+    100% {
+      opacity: 0;
+      transform: perspective(1000px) rotateX(-90deg);
+    }
+  }
+
   /* Animation Utility Classes */
   .animate-in-subtle {
     animation: fadeInUp 0.4s ease-out forwards;
@@ -222,6 +244,14 @@
 
   .animate-slide-up {
     animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-flip-in {
+    animation: flipInX 0.5s ease-out forwards;
+  }
+
+  .animate-flip-out {
+    animation: flipOutX 0.5s ease-in forwards;
   }
 
   /* Stagger Animation for Lists */

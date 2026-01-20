@@ -1,16 +1,23 @@
-import { Brain, Zap, Activity } from 'lucide-react'
+import { Brain, Zap, Activity, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { HealthCheckIndicator } from './HealthCheckIndicator'
 import { OracleVisualization } from './OracleVisualization'
 
-export function OracleHeader({ connected, isResearching }) {
+export function OracleHeader({ connected, isResearching, onHeaderClick, currentPage }) {
+  const isResearchPage = currentPage === 'research'
+
   return (
     <header className="relative border-b border-border/50 backdrop-blur-sm bg-background/50 z-10">
       <div className="max-w-5xl mx-auto px-6 py-4">
         {/* Header Top Row - Compact */}
         <div className="flex items-center justify-between mb-3">
-          {/* Delos Identity - Minimal */}
-          <div className="flex items-center gap-2">
+          {/* Delos Identity - Clickable to return home */}
+          <div
+            onClick={onHeaderClick}
+            className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${
+              isResearchPage ? 'hover:opacity-70' : ''
+            }`}
+          >
             <div className="p-1.5">
               <OracleVisualization size={24} />
             </div>
@@ -20,6 +27,12 @@ export function OracleHeader({ connected, isResearching }) {
                 Make Better Decisions.
               </p>
             </div>
+            {isResearchPage && (
+              <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border/30 text-xs font-mono text-muted-foreground">
+                <ChevronRight className="w-3 h-3" />
+                <span>Research</span>
+              </div>
+            )}
           </div>
 
           {/* Status Indicators - Compact Row */}

@@ -13,6 +13,7 @@ import { KalshiCard } from '@/components/KalshiCard'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
 
 function App() {
+  const [currentPage, setCurrentPage] = useState('home') // 'home' or 'research'
   const [query, setQuery] = useState('')
   const [signals, setSignals] = useState([])
   const [markets, setMarkets] = useState([])
@@ -122,6 +123,7 @@ function App() {
 
   const handleSearch = e => {
     e.preventDefault()
+    setCurrentPage('research') // Navigate to research page
     if (!query.trim()) {
       const mockSignals = generateMockSignals(query || 'bitcoin', 25)
       setSignals(mockSignals)
@@ -157,149 +159,172 @@ function App() {
       <div className="grid-bg fixed inset-0 pointer-events-none opacity-10" />
 
       {/* Header */}
-      <OracleHeader connected={connected} isResearching={loading} />
+      <OracleHeader
+        connected={connected}
+        isResearching={loading}
+        onHeaderClick={() => setCurrentPage('home')}
+        currentPage={currentPage}
+      />
 
       {/* Main Layout - Condensed */}
       <div className="relative flex flex-1 overflow-hidden">
-        {/* Main Content Area */}
+        {/* Main Content Area with Flip Animation */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-            {/* Search Section - Minimal */}
-            <div className="animate-in-subtle flex justify-end">
-              <form onSubmit={handleSearch} className="flex gap-3 w-90 max-w-2xl">
-                <div className="relative flex-1">
-                  <Input
-                    type="text"
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    placeholder="Research any market situation..."
-                    className="pl-4 pr-4 py-2.5 font-mono text-xs bg-card/40 border border-border/30 rounded-3xl focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
-                    disabled={loading}
-                  />
+            {currentPage === 'home' ? (
+              <div key="home-content" className="animate-flip-in space-y-6">
+                {/* Search Section - Minimal */}
+                <div className="animate-in-subtle flex justify-end">
+                  <form onSubmit={handleSearch} className="flex gap-3 w-90 max-w-2xl">
+                    <div className="relative flex-1">
+                      <Input
+                        type="text"
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        placeholder="Research any market situation..."
+                        className="pl-4 pr-4 py-2.5 font-mono text-xs bg-card/40 border border-border/30 rounded-3xl focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
+                        disabled={loading}
+                      />
+                    </div>
+                    <Button type="submit" disabled={loading} className="btn-modern rounded-3xl">
+                      {loading ? (
+                        <>
+                          Searching
+                          <Search className="h-4 w-4 animate-pulse" />
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
                 </div>
-                <Button type="submit" disabled={loading} className="btn-modern rounded-3xl">
-                  {loading ? (
-                    <>
-                      Searching
-                      <Search className="h-4 w-4 animate-pulse" />
-                    </>
-                  ) : (
-                    <><Search className="h-4 w-4" /></>
-                  )}
-                </Button>
-              </form>
-            </div>
 
-            {/* Error Display */}
-            {error && (
-              <Card className="border-destructive/50 bg-destructive/5 animate-in slide-in-from-top-2 fade-in duration-500 hover:bg-destructive/10 hover:border-destructive/70 transition-all group">
-                <CardContent className="py-3 font-mono text-sm text-destructive transition-colors group-hover:text-destructive/90">
-                  Error: {error}
-                </CardContent>
-              </Card>
-            )}
+                {/* Markets Grid - 4 Columns */}
+                {initialMarkets && initialMarkets.length > 0 && (
+                  <div className="space-y-4 animate-fade-in-slow">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-mono text-muted-foreground">
+                        Featured Markets
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Data Quality Score */}
+                        {dataQuality && (
+                          <Badge
+                            variant="outline"
+                            className={`text-xs py-0 px-2 h-6 font-mono ${
+                              dataQuality.qualityScore >= 70
+                                ? 'border-bullish/30 bg-bullish/5 text-bullish'
+                                : dataQuality.qualityScore >= 50
+                                  ? 'border-yellow-500/30 bg-yellow-500/5 text-yellow-400'
+                                  : 'border-red-500/30 bg-red-500/5 text-red-400'
+                            }`}
+                            title={`Data Quality Score: ${dataQuality.qualityScore}/100, Avg Age: ${dataQuality.averageAge} days`}
+                          >
+                            {dataQuality.qualityScore}%
+                          </Badge>
+                        )}
 
-            {/* Loading State */}
-            {loading && (
-              <div className="text-center py-12">
-                <OracleVisualization size={64} />
-                <p className="text-xs font-mono text-muted-foreground mt-4">
-                  Analyzing markets and signals...
-                </p>
-              </div>
-            )}
+                        {/* Data Freshness Warning */}
+                        <Badge
+                          variant="outline"
+                          className="text-xs py-0 px-2 h-6 border-yellow-500/30 bg-yellow-500/5 text-yellow-400 font-mono cursor-help"
+                          title="Polymarket API contains primarily 2020-2021 markets. Kalshi integration pending."
+                        >
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Limited Data
+                        </Badge>
+                      </div>
+                    </div>
 
-            {/* Markets Grid - 4 Columns */}
-            {!loading && initialMarkets && initialMarkets.length > 0 && !searchedQuery && (
-              <div className="space-y-4 animate-fade-in-slow">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-mono text-muted-foreground">Featured Markets</div>
-                  <div className="flex items-center gap-2">
-                    {/* Data Quality Score */}
-                    {dataQuality && (
-                      <Badge
-                        variant="outline"
-                        className={`text-xs py-0 px-2 h-6 font-mono ${
-                          dataQuality.qualityScore >= 70
-                            ? 'border-bullish/30 bg-bullish/5 text-bullish'
-                            : dataQuality.qualityScore >= 50
-                              ? 'border-yellow-500/30 bg-yellow-500/5 text-yellow-400'
-                              : 'border-red-500/30 bg-red-500/5 text-red-400'
-                        }`}
-                        title={`Data Quality Score: ${dataQuality.qualityScore}/100, Avg Age: ${dataQuality.averageAge} days`}
-                      >
-                        {dataQuality.qualityScore}%
-                      </Badge>
-                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {/* Polymarket */}
+                      {initialMarkets
+                        .filter(m => m.source === 'polymarket' || !m.source)
+                        .slice(0, 4)
+                        .map((market, i) => (
+                          <div
+                            key={`poly-${i}`}
+                            className="stagger-item"
+                            style={{ animationDelay: `${i * 100}ms` }}
+                          >
+                            <PolymarketCard
+                              market={market}
+                              onQuickResearch={handleQuickResearch}
+                              loading={loading}
+                            />
+                          </div>
+                        ))}
 
-                    {/* Data Freshness Warning */}
-                    <Badge
-                      variant="outline"
-                      className="text-xs py-0 px-2 h-6 border-yellow-500/30 bg-yellow-500/5 text-yellow-400 font-mono cursor-help"
-                      title="Polymarket API contains primarily 2020-2021 markets. Kalshi integration pending."
-                    >
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      Limited Data
-                    </Badge>
+                      {/* Kalshi */}
+                      {initialMarkets
+                        .filter(m => m.source === 'kalshi')
+                        .slice(0, 4)
+                        .map((market, i) => (
+                          <div
+                            key={`kalshi-${i}`}
+                            className="stagger-item"
+                            style={{ animationDelay: `${(i + 2) * 100}ms` }}
+                          >
+                            <KalshiCard
+                              market={market}
+                              onQuickResearch={handleQuickResearch}
+                              loading={loading}
+                            />
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {/* Polymarket */}
-                  {initialMarkets
-                    .filter(m => m.source === 'polymarket' || !m.source)
-                    .slice(0, 4)
-                    .map((market, i) => (
-                      <div
-                        key={`poly-${i}`}
-                        className="stagger-item"
-                        style={{ animationDelay: `${i * 100}ms` }}
-                      >
-                        <PolymarketCard
-                          market={market}
-                          onQuickResearch={handleQuickResearch}
-                          loading={loading}
-                        />
-                      </div>
-                    ))}
-
-                  {/* Kalshi */}
-                  {initialMarkets
-                    .filter(m => m.source === 'kalshi')
-                    .slice(0, 4)
-                    .map((market, i) => (
-                      <div
-                        key={`kalshi-${i}`}
-                        className="stagger-item"
-                        style={{ animationDelay: `${(i + 2) * 100}ms` }}
-                      >
-                        <KalshiCard
-                          market={market}
-                          onQuickResearch={handleQuickResearch}
-                          loading={loading}
-                        />
-                      </div>
-                    ))}
-                </div>
+                )}
               </div>
-            )}
+            ) : (
+              <div key="research-content" className="animate-flip-in space-y-6">
+                {/* Error Display */}
+                {error && (
+                  <Card className="border-destructive/50 bg-destructive/5 animate-in slide-in-from-top-2 fade-in duration-500 hover:bg-destructive/10 hover:border-destructive/70 transition-all group">
+                    <CardContent className="py-3 font-mono text-sm text-destructive transition-colors group-hover:text-destructive/90">
+                      Error: {error}
+                    </CardContent>
+                  </Card>
+                )}
 
-            {/* Empty State - Only Show If User Has Searched But Got No Results */}
-            {/* Removed OracleVisualization from initial state to avoid random appearance */}
+                {/* Loading State */}
+                {loading && (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="inline-flex items-center justify-center">
+                      <OracleVisualization size={32} />
+                    </div>
+                    <p className="text-xs font-mono text-muted-foreground mt-4">
+                      Analyzing markets and signals...
+                    </p>
+                  </div>
+                )}
 
-            {/* No Results */}
-            {!loading && searchedQuery && signals.length === 0 && (
-              <Card className="border-border/50">
-                <CardContent className="text-center py-12 font-mono text-sm text-muted-foreground">
-                  No signals found for this query
-                </CardContent>
-              </Card>
+                {/* Results Display */}
+                {!loading && signals.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="text-xs font-mono text-muted-foreground">
+                      {signals.length} signals for "{searchedQuery}"
+                    </div>
+                  </div>
+                )}
+
+                {/* No Results */}
+                {!loading && searchedQuery && signals.length === 0 && (
+                  <Card className="border-border/50">
+                    <CardContent className="text-center py-12 font-mono text-sm text-muted-foreground">
+                      No signals found for this query
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
           </div>
         </main>
 
-        {/* Signals Sidebar - Only show when there are signals */}
-        {signals.length > 0 && <SignalsSidebar signals={signals} />}
+        {/* Signals Sidebar - Only show when there are signals on research page */}
+        {signals.length > 0 && currentPage === 'research' && <SignalsSidebar signals={signals} />}
       </div>
 
       {/* Footer */}
