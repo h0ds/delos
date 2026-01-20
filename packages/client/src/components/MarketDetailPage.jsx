@@ -186,7 +186,7 @@ export function MarketDetailPage({
                 className="text-xs font-mono px-2 py-1 bg-muted/50 text-muted-foreground border-border/50"
               >
                 <Calendar className="h-3 w-3 mr-1 inline" />
-                {market.dataFreshness.daysOld} days old
+                {market.dataFreshness.daysOld} Days Old
               </Badge>
             )}
           </div>

@@ -41,7 +41,7 @@ export function SignalsSidebar({ signals }) {
   if (signals.length === 0) {
     return (
       <div className="w-80 border-l border-border/50 bg-background/50 backdrop-blur-sm p-4 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground text-center">No signals to display</p>
+        <p className="text-xs text-muted-foreground text-center">No Signals To Display</p>
       </div>
     )
   }

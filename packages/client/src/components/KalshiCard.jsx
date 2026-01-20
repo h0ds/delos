@@ -1,12 +1,13 @@
+import React, { useEffect, useState } from 'react'
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
 import { OracleVisualization } from './OracleVisualization'
 import { useMarketUpdates } from '@/lib/useMarketUpdates'
-import { useEffect, useState } from 'react'
 
-export function KalshiCard({ market, onQuickResearch, onSelectMarket, loading }) {
+function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
   const { getMarketUpdate } = useMarketUpdates()
   const [liveMarket, setLiveMarket] = useState(market)
   const [priceFlash, setPriceFlash] = useState(false)
+  const [lastUpdateId, setLastUpdateId] = useState(null)
 
   const marketId = `kalshi:${market.market}`
 
@@ -14,35 +15,40 @@ export function KalshiCard({ market, onQuickResearch, onSelectMarket, loading })
     const interval = setInterval(() => {
       const update = getMarketUpdate(marketId)
       if (update) {
-        setLiveMarket(prev => ({
-          ...prev,
-          outcomes: update.outcomes,
-          volume24h: update.volume24h,
-          liquidity: update.liquidity
-        }))
+        // Only update if data actually changed (deduplicate)
+        const updateId = JSON.stringify([update.outcomes, update.volume24h, update.liquidity])
+        if (updateId !== lastUpdateId) {
+          setLastUpdateId(updateId)
+          setLiveMarket(prev => ({
+            ...prev,
+            outcomes: update.outcomes,
+            volume24h: update.volume24h,
+            liquidity: update.liquidity
+          }))
 
-        // Flash animation when price updates
-        if (update.priceChangePercent && update.priceChangePercent !== 0) {
-          setPriceFlash(true)
-          setTimeout(() => setPriceFlash(false), 300)
+          // Flash animation when price updates
+          if (update.priceChangePercent && Math.abs(update.priceChangePercent) > 0.1) {
+            setPriceFlash(true)
+            setTimeout(() => setPriceFlash(false), 400)
+          }
         }
       }
-    }, 1000)
+    }, 2000) // Reduce polling frequency from 1s to 2s
 
     return () => clearInterval(interval)
-  }, [marketId, getMarketUpdate])
+  }, [marketId, getMarketUpdate, lastUpdateId])
 
   const update = getMarketUpdate(marketId)
 
   return (
     <div
       onClick={() => onSelectMarket && onSelectMarket(liveMarket)}
-      className={`group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer ${
+      className={`group relative rounded-xl overflow-hidden bg-card border border-border/60 hover:border-primary/50 transition-all duration-300 hover:shadow-md hover:shadow-primary/15 cursor-pointer ${
         priceFlash ? 'animate-pulse' : ''
       }`}
     >
-      {/* Background Gradient Glow */}
-      <div className="absolute inset-0 bg-card from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      {/* Hover Background Enhancement */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* Live Price Alert Badge */}
       {update?.priceChangePercent && Math.abs(update.priceChangePercent) > 0 && (
@@ -154,7 +160,7 @@ export function KalshiCard({ market, onQuickResearch, onSelectMarket, loading })
                     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
                 }`}
               >
-                {liveMarket.status === 'active' ? 'Open' : 'Closed'}
+                {liveMarket.status === 'active' ? 'Active' : 'Closed'}
               </span>
             )}
 
@@ -184,3 +190,12 @@ export function KalshiCard({ market, onQuickResearch, onSelectMarket, loading })
     </div>
   )
 }
+
+export const KalshiCard = React.memo(KalshiCardInner, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if market.market id changed
+  return (
+    prevProps.market?.market === nextProps.market?.market && prevProps.loading === nextProps.loading
+  )
+})
+
+KalshiCard.displayName = 'KalshiCard'

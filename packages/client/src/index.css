@@ -54,12 +54,16 @@
   --color-warning: oklch(0.7 0.15 60); /* Warning yellow */
   --color-warning-foreground: oklch(0.1 0.01 260); /* Warning text (dark) */
 
-  --radius: 0.375rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-squircle: 0.65rem;
+  --radius-squircle-md: 0.95rem;
+  --radius-squircle-lg: 1.25rem;
+  --radius-squircle-xl: 1.75rem;
   --font-mono: 'Hedvig Letters Sans', sans-serif;
 }
 
@@ -208,6 +212,16 @@
     }
   }
 
+  /* Pure Opacity Fade (for page transitions - no jank) */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   /* Animation Utility Classes */
   .animate-in-subtle {
     animation: fadeInUp 0.4s ease-out forwards;
@@ -238,11 +252,11 @@
   }
 
   .animate-flip-in {
-    animation: fadeInUp 0.3s ease-out forwards;
+    animation: fadeIn 0.3s ease-out forwards;
   }
 
   .animate-flip-out {
-    animation: fadeInUp 0.3s ease-out forwards;
+    animation: fadeIn 0.3s ease-out forwards;
   }
 
   /* Stagger Animation for Lists */
@@ -293,6 +307,23 @@
     linear-gradient(oklch(0.22 0.01 260 / 0.5) 1px, transparent 1px),
     linear-gradient(90deg, oklch(0.22 0.01 260 / 0.5) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* Squircle Border Radius Utilities */
+.rounded-squircle {
+  border-radius: var(--radius-squircle);
+}
+
+.rounded-squircle-md {
+  border-radius: var(--radius-squircle-md);
+}
+
+.rounded-squircle-lg {
+  border-radius: var(--radius-squircle-lg);
+}
+
+.rounded-squircle-xl {
+  border-radius: var(--radius-squircle-xl);
 }
 
 /* Semantic Text Color Classes */

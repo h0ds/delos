@@ -15,6 +15,10 @@ import { SignalsSidebar } from '@/components/SignalsSidebar'
 import { MarketDetailPage } from '@/components/MarketDetailPage'
 import { MarketComparisonPage } from '@/components/MarketComparisonPage'
 import { MarketFilterPanel } from '@/components/MarketFilterPanel'
+import { SearchAutocomplete } from '@/components/SearchAutocomplete'
+import { useDebounce } from '@/lib/useDebounce'
+import { MarketCardSkeleton } from '@/components/skeletons/MarketCardSkeleton'
+import { SignalListSkeleton } from '@/components/skeletons/SignalListSkeleton'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', 'detail', or 'compare'
@@ -157,9 +161,9 @@ function App() {
     const trimmedQuery = query.trim()
 
     if (!trimmedQuery) {
-      const mockSignals = generateMockSignals('bitcoin', 25)
+      const mockSignals = generateMockSignals('Bitcoin', 25)
       setSignals(mockSignals)
-      setSearchedQuery('bitcoin')
+      setSearchedQuery('Bitcoin')
       setLoading(false)
       setQuery('')
       return
@@ -252,7 +256,7 @@ function App() {
       {/* Main Layout - Condensed */}
       <div className="relative flex flex-1 overflow-hidden">
         {/* Main Content Area with Flip Animation */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto will-change-opacity">
           {currentPage === 'compare' && comparisonMarket1 ? (
             <div key="compare-content" className="animate-flip-in">
               <MarketComparisonPage
@@ -280,31 +284,38 @@ function App() {
                 <div key="home-content" className="animate-flip-in space-y-6">
                   {/* Search Section - Minimal & Compact */}
                   <div className="animate-in-subtle flex justify-center">
-                    <form onSubmit={handleSearch} className="flex gap-2 items-center h-9">
+                    <form onSubmit={handleSearch} className="flex gap-2 items-center relative">
                       <div className="relative w-64">
                         <Input
                           type="text"
                           value={query}
                           onChange={e => setQuery(e.target.value)}
                           placeholder="Research market..."
-                          className="pl-3 pr-3 py-2 text-xs h-9 bg-card/40 border border-border/30 rounded-md focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
+                          className="h-10 rounded-3xl pr-10"
                           disabled={loading}
+                          nativeInput
+                          autoComplete="off"
+                        />
+                        <SearchAutocomplete
+                          value={query}
+                          onChange={e => setQuery(e.target.value)}
+                          onSelect={selected => {
+                            setQuery(selected)
+                            // Trigger search after selection
+                            setTimeout(() => {
+                              const event = new Event('submit', { bubbles: true })
+                              event.target = { value: selected }
+                              handleSearch(event)
+                            }, 0)
+                          }}
                         />
                       </div>
                       <Button
                         type="submit"
                         disabled={loading}
-                        className="btn-modern px-3 h-9 text-xs"
+                        className="btn-modern h-10 rounded-3xl flex items-center justify-center"
                       >
-                        {loading ? (
-                          <>
-                            <Search className="h-3 w-3" />
-                          </>
-                        ) : (
-                          <>
-                            <Search className="h-3 w-3" />
-                          </>
-                        )}
+                        <Search className="h-4 w-4" />
                       </Button>
                     </form>
                   </div>
@@ -357,54 +368,82 @@ function App() {
                       {/* Polymarket Section */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 px-1">
-                          <PolymarketIcon size={18} className="text-primary" />
-                          <h2 className="text-sm font-mono text-muted-foreground">Polymarket</h2>
+                         <Badge variant="outline">Polymarket</Badge>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {(filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
-                            .filter(m => m.source === 'polymarket' || !m.source)
-                            .slice(0, 4)
-                            .map((market, i) => (
-                              <div
-                                key={`poly-${i}`}
-                                className="stagger-item"
-                                style={{ animationDelay: `${i * 100}ms` }}
-                              >
-                                <PolymarketCard
-                                  market={market}
-                                  onQuickResearch={handleQuickResearch}
-                                  onSelectMarket={handleMarketSelect}
-                                  loading={loading}
-                                />
-                              </div>
-                            ))}
+                          {initialMarkets.length === 0 ? (
+                            // Show skeleton loaders while loading
+                            <>
+                              {[1, 2, 3, 4].map(i => (
+                                <div
+                                  key={`poly-skeleton-${i}`}
+                                  className="stagger-item"
+                                  style={{ animationDelay: `${(i - 1) * 100}ms` }}
+                                >
+                                  <MarketCardSkeleton />
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            // Show actual market cards
+                            (filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
+                              .filter(m => m.source === 'polymarket' || !m.source)
+                              .slice(0, 4)
+                              .map((market, i) => (
+                                <div
+                                  key={`poly-${i}`}
+                                  className="stagger-item"
+                                  style={{ animationDelay: `${i * 100}ms` }}
+                                >
+                                  <PolymarketCard
+                                    market={market}
+                                    onQuickResearch={handleQuickResearch}
+                                    onSelectMarket={handleMarketSelect}
+                                    loading={loading}
+                                  />
+                                </div>
+                              ))
+                          )}
                         </div>
                       </div>
 
                       {/* Kalshi Section */}
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-1">
-                          <KalshiIcon size={18} className="text-primary" />
-                          <h2 className="text-sm font-mono text-muted-foreground">Kalshi</h2>
-                        </div>
+                         <Badge variant="outline">Kalshi</Badge>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {(filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
-                            .filter(m => m.source === 'kalshi')
-                            .slice(0, 4)
-                            .map((market, i) => (
-                              <div
-                                key={`kalshi-${i}`}
-                                className="stagger-item"
-                                style={{ animationDelay: `${(i + 2) * 100}ms` }}
-                              >
-                                <KalshiCard
-                                  market={market}
-                                  onQuickResearch={handleQuickResearch}
-                                  onSelectMarket={handleMarketSelect}
-                                  loading={loading}
-                                />
-                              </div>
-                            ))}
+                          {initialMarkets.length === 0 ? (
+                            // Show skeleton loaders while loading
+                            <>
+                              {[1, 2, 3, 4].map(i => (
+                                <div
+                                  key={`kalshi-skeleton-${i}`}
+                                  className="stagger-item"
+                                  style={{ animationDelay: `${(i + 3) * 100}ms` }}
+                                >
+                                  <MarketCardSkeleton />
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            // Show actual market cards
+                            (filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
+                              .filter(m => m.source === 'kalshi')
+                              .slice(0, 4)
+                              .map((market, i) => (
+                                <div
+                                  key={`kalshi-${i}`}
+                                  className="stagger-item"
+                                  style={{ animationDelay: `${(i + 2) * 100}ms` }}
+                                >
+                                  <KalshiCard
+                                    market={market}
+                                    onQuickResearch={handleQuickResearch}
+                                    onSelectMarket={handleMarketSelect}
+                                    loading={loading}
+                                  />
+                                </div>
+                              ))
+                          )}
                         </div>
                       </div>
                     </div>
@@ -423,13 +462,17 @@ function App() {
 
                   {/* Loading State */}
                   {loading && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="inline-flex items-center justify-center">
-                        <OracleVisualization size={32} />
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="inline-flex items-center justify-center">
+                          <OracleVisualization size={32} />
+                        </div>
+                        <p className="text-xs font-mono text-muted-foreground mt-4">
+                          Analyzing markets and signals...
+                        </p>
                       </div>
-                      <p className="text-xs font-mono text-muted-foreground mt-4">
-                        Analyzing markets and signals...
-                      </p>
+                      {/* Show signal skeleton loaders */}
+                      <SignalListSkeleton count={8} />
                     </div>
                   )}
 
