@@ -1,9 +1,12 @@
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { OracleVisualization } from './OracleVisualization'
 
-export function PolymarketCard({ market, onQuickResearch, loading }) {
+export function PolymarketCard({ market, onQuickResearch, onSelectMarket, loading }) {
   return (
-    <div className="group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
+    <div
+      onClick={() => onSelectMarket && onSelectMarket(market)}
+      className="group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
+    >
       {/* Background Gradient Glow */}
       <div className="absolute inset-0 bg-card from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -102,7 +105,10 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
 
           {/* Oracle Visualization - Research Button */}
           <button
-            onClick={() => onQuickResearch(market.question)}
+            onClick={e => {
+              e.stopPropagation()
+              onQuickResearch(market.question)
+            }}
             disabled={loading}
             className="opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Research this market"
