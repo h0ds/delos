@@ -52,7 +52,12 @@ export interface PolymarketSignal {
 const GAMMA_API_BASE = 'https://gamma-api.polymarket.com'
 
 // CLOB API (newer, real-time order book)
-const CLOB_API_BASE = 'https://clob.polymarket.com/api'
+// Try multiple possible endpoints
+const CLOB_API_URLS = [
+  'https://clob.polymarket.com/api', // Primary
+  'https://clob.polymarket.com', // Fallback 1
+  'https://markets-api.polymarket.com' // Fallback 2
+]
 
 // Create agent instances for timeout handling
 const httpAgent = new HttpAgent({ timeout: 5000 })
@@ -66,60 +71,61 @@ export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
   try {
     console.log('[polymarket] 🔍 fetching featured markets from CLOB API...')
 
-    // Try CLOB API first (modern, real-time order book data)
-    try {
-      const response = await axios.get(`${CLOB_API_BASE}/markets`, {
-        params: {
-          limit: 100,
-          orderBy: 'volume24h',
-          order: 'desc'
-        },
-        timeout: 8000,
-        httpAgent,
-        httpsAgent
-      })
+    // Try CLOB API endpoints in order
+    for (const clobUrl of CLOB_API_URLS) {
+      try {
+        console.log(`[polymarket-clob] 📡 trying ${clobUrl}/markets...`)
+        const response = await axios.get(`${clobUrl}/markets`, {
+          params: {
+            limit: 100
+          },
+          timeout: 5000,
+          httpAgent,
+          httpsAgent
+        })
 
-      // Handle different response structures
-      let allMarkets = []
-      if (response.data.markets && Array.isArray(response.data.markets)) {
-        allMarkets = response.data.markets
-      } else if (Array.isArray(response.data)) {
-        allMarkets = response.data
-      }
-
-      if (allMarkets.length > 0) {
-        console.log(`[polymarket-clob] 📊 retrieved ${allMarkets.length} markets from CLOB API`)
-
-        // Filter and transform markets from CLOB
-        const activeMarkets = allMarkets
-          .filter((m: any) => {
-            // Ensure market has essential data
-            return (
-              m.question &&
-              m.outcomePrices &&
-              (m.active === true || m.status === 'active') &&
-              m.volume24h > 0
-            )
-          })
-          .sort((a: any, b: any) => (b.volume24h || 0) - (a.volume24h || 0))
-          .slice(0, 8)
-
-        if (activeMarkets.length > 0) {
-          console.log(`[polymarket-clob] ✅ found ${activeMarkets.length} active markets`)
-          return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
-        } else {
-          console.warn('[polymarket-clob] ⚠️  No active markets found, trying filtered approach')
+        // Handle different response structures
+        let allMarkets = []
+        if (response.data.markets && Array.isArray(response.data.markets)) {
+          allMarkets = response.data.markets
+        } else if (Array.isArray(response.data)) {
+          allMarkets = response.data
         }
+
+        if (allMarkets.length > 0) {
+          console.log(`[polymarket-clob] 📊 retrieved ${allMarkets.length} markets from CLOB API`)
+
+          // Filter and transform markets from CLOB
+          const activeMarkets = allMarkets
+            .filter((m: any) => {
+              // Ensure market has essential data
+              return (
+                m.question &&
+                m.outcomePrices &&
+                (m.active === true || m.status === 'active') &&
+                m.volume24h > 0
+              )
+            })
+            .sort((a: any, b: any) => (b.volume24h || 0) - (a.volume24h || 0))
+            .slice(0, 8)
+
+          if (activeMarkets.length > 0) {
+            console.log(`[polymarket-clob] ✅ found ${activeMarkets.length} active markets`)
+            return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
+          }
+        }
+      } catch (endpointError) {
+        console.warn(
+          `[polymarket-clob] ⚠️  ${clobUrl} failed`,
+          endpointError instanceof Error ? endpointError.message : String(endpointError)
+        )
+        // Continue to next endpoint
       }
-    } catch (clobError) {
-      console.warn(
-        '[polymarket-clob] ⚠️  CLOB API error, falling back to Gamma',
-        clobError instanceof Error ? clobError.message : String(clobError)
-      )
     }
 
+    console.log('[polymarket] 📡 all CLOB endpoints failed, falling back to Gamma API...')
+
     // Fallback to Gamma API (historical/secondary data)
-    console.log('[polymarket] 📡 falling back to Gamma API for historical data...')
     const response = await axios.get(`${GAMMA_API_BASE}/markets`, {
       params: {
         limit: 100
@@ -163,45 +169,49 @@ export async function getPolymarketMarkets(query: string): Promise<PolymarketSig
   try {
     console.log(`[polymarket] 🔍 searching markets for query: "${query}"`)
 
-    // Try CLOB API first for modern data
-    try {
-      const response = await axios.get(`${CLOB_API_BASE}/markets`, {
-        params: {
-          limit: 50
-        },
-        timeout: 8000,
-        httpAgent,
-        httpsAgent
-      })
+    // Try CLOB API endpoints in order
+    for (const clobUrl of CLOB_API_URLS) {
+      try {
+        const response = await axios.get(`${clobUrl}/markets`, {
+          params: {
+            limit: 50
+          },
+          timeout: 5000,
+          httpAgent,
+          httpsAgent
+        })
 
-      let allMarkets = []
-      if (response.data.markets && Array.isArray(response.data.markets)) {
-        allMarkets = response.data.markets
-      } else if (Array.isArray(response.data)) {
-        allMarkets = response.data
-      }
-
-      if (allMarkets.length > 0) {
-        const relevantMarkets = allMarkets
-          .filter((market: any) => market.active && !market.closed)
-          .filter((market: any) => isRelevantToQuery(market as PolymarketRawMarket, query))
-          .map((market: any) => rawMarketToSignal(market, query))
-          .sort((a: any, b: any) => b.relevance - a.relevance)
-          .slice(0, 5)
-
-        if (relevantMarkets.length > 0) {
-          console.log(
-            `[polymarket-clob] 📊 found ${relevantMarkets.length} relevant markets for "${query}"`
-          )
-          return relevantMarkets
+        let allMarkets = []
+        if (response.data.markets && Array.isArray(response.data.markets)) {
+          allMarkets = response.data.markets
+        } else if (Array.isArray(response.data)) {
+          allMarkets = response.data
         }
+
+        if (allMarkets.length > 0) {
+          const relevantMarkets = allMarkets
+            .filter((market: any) => market.active && !market.closed)
+            .filter((market: any) => isRelevantToQuery(market as PolymarketRawMarket, query))
+            .map((market: any) => rawMarketToSignal(market, query))
+            .sort((a: any, b: any) => b.relevance - a.relevance)
+            .slice(0, 5)
+
+          if (relevantMarkets.length > 0) {
+            console.log(
+              `[polymarket-clob] 📊 found ${relevantMarkets.length} relevant markets for "${query}"`
+            )
+            return relevantMarkets
+          }
+        }
+      } catch (endpointError) {
+        console.warn(
+          `[polymarket-clob:search] ⚠️  ${clobUrl} failed`,
+          endpointError instanceof Error ? endpointError.message : String(endpointError)
+        )
       }
-    } catch (clobError) {
-      console.warn(
-        '[polymarket-clob:search] ⚠️  CLOB search failed, trying Gamma',
-        clobError instanceof Error ? clobError.message : String(clobError)
-      )
     }
+
+    console.log('[polymarket] 📡 all CLOB endpoints failed, falling back to Gamma API...')
 
     // Fallback to Gamma API
     const response = await axios.get(`${GAMMA_API_BASE}/markets`, {

@@ -1,17 +1,17 @@
-export function GlowingGradientCircle() {
+export function GlowingGradientCircle({ size = 32 }) {
   return (
     <div
       className="relative flex items-center justify-center"
       style={{
-        width: '32px',
-        height: '32px'
+        width: size,
+        height: size
       }}
     >
       {/* Animated gradient circle */}
       <div
         style={{
-          width: '32px',
-          height: '32px',
+          width: size,
+          height: size,
           borderRadius: '50%',
           background: 'linear-gradient(45deg, #5227FF, #FF9FFC, #5227FF)',
           backgroundSize: '200% 200%',
@@ -24,8 +24,8 @@ export function GlowingGradientCircle() {
       <div
         style={{
           position: 'absolute',
-          width: '32px',
-          height: '32px',
+          width: size,
+          height: size,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(255, 159, 252, 0.4) 0%, transparent 70%)',
           filter: 'blur(8px)',

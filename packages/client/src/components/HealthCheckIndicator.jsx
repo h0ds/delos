@@ -22,13 +22,14 @@ export function HealthCheckIndicator() {
         const response = await fetch('http://localhost:3333/api/health')
         if (response.ok) {
           const data = await response.json()
+          // Only get providers that are actually returned (enabled/configured)
           const providersList = Object.entries(data.providers).map(([key, info]) => ({
             name: PROVIDER_DISPLAY[key] || key,
             status: info.status,
             key
           }))
           setProviders(providersList)
-          console.log('[health] ✅ providers checked')
+          console.log(`[health] ✅ ${providersList.length} providers checked`)
           setLoading(false)
         }
       } catch (error) {
@@ -44,6 +45,7 @@ export function HealthCheckIndicator() {
 
   const readyCount = providers.filter(p => p.status === 'ready').length
   const totalCount = providers.length
+  const isHealthy = totalCount > 0 && readyCount === totalCount
 
   return (
     <div className="relative">
@@ -55,7 +57,7 @@ export function HealthCheckIndicator() {
         <div className="flex items-center gap-1.5">
           <span
             className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-              readyCount === totalCount ? 'bg-bullish animate-pulse' : 'bg-yellow-400'
+              isHealthy ? 'bg-bullish animate-pulse' : 'bg-yellow-400'
             }`}
           />
           <span className="text-xs font-mono text-muted-foreground">
@@ -69,49 +71,47 @@ export function HealthCheckIndicator() {
         />
       </button>
 
-      {/* Dropdown Menu - Only Active Providers */}
+      {/* Dropdown Menu - Only configured providers */}
       {isOpen && (
         <div className="absolute top-full right-0 mt-2 w-56 bg-card border border-border/50 rounded-lg shadow-lg backdrop-blur-sm z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
-            {providers
-              .filter(p => p.status !== 'disabled')
-              .map(provider => {
-                const isReady = provider.status === 'ready'
-                const statusText =
-                  provider.status === 'ready'
-                    ? 'Ready'
-                    : provider.status === 'disabled'
-                      ? 'Disabled'
-                      : 'Missing Key'
+            {providers.map(provider => {
+              const isReady = provider.status === 'ready'
+              const statusText =
+                provider.status === 'ready'
+                  ? 'Ready'
+                  : provider.status === 'disabled'
+                    ? 'Disabled'
+                    : 'Missing Key'
 
-                return (
-                  <div
-                    key={provider.key}
-                    className="flex items-center justify-between gap-3 p-2 rounded hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span
-                        className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
-                          isReady ? 'bg-bullish' : 'bg-yellow-400'
-                        }`}
-                      />
-                      <span className="text-xs font-mono text-foreground truncate">
-                        {provider.name}
-                      </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs font-mono flex-shrink-0 ${
-                        isReady
-                          ? 'bg-bullish/10 text-bullish border-bullish/30'
-                          : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+              return (
+                <div
+                  key={provider.key}
+                  className="flex items-center justify-between gap-3 p-2 rounded hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span
+                      className={`w-2 h-2 rounded-full flex-shrink-0 transition-all ${
+                        isReady ? 'bg-bullish' : 'bg-yellow-400'
                       }`}
-                    >
-                      {statusText}
-                    </Badge>
+                    />
+                    <span className="text-xs font-mono text-foreground truncate">
+                      {provider.name}
+                    </span>
                   </div>
-                )
-              })}
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-mono flex-shrink-0 ${
+                      isReady
+                        ? 'bg-bullish/10 text-bullish border-bullish/30'
+                        : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                    }`}
+                  >
+                    {statusText}
+                  </Badge>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

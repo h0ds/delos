@@ -1,12 +1,12 @@
-import { Button } from '@/components/ui/button'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import { OracleVisualization } from './OracleVisualization'
 
 export function PolymarketCard({ market, onQuickResearch, loading }) {
   return (
     <div className="group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
       {/* Background Gradient Glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
+      <div className="absolute inset-0 bg-card from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
       {/* Content Section */}
       <div className="relative p-4 space-y-4">
         {/* Title */}
@@ -84,8 +84,9 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
         </div>
 
         {/* Status Badge */}
+      <div className="flex justify-end align-right gap-1">
         {market.status && (
-          <div className="flex items-center justify-center py-2">
+          <div className="flex items-center justify-end">
             <span
               className={`text-xs font-mono px-3 py-1 rounded-full border ${
                 market.status === 'active'
@@ -98,14 +99,17 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
           </div>
         )}
 
-        {/* Quick Research Button */}
-        <Button
+        {/* Oracle Visualization - Bottom Right Corner (Interactive) */}
+        <button
           onClick={() => onQuickResearch(market.question)}
           disabled={loading}
-          className="btn-modern w-full"
+          className="bottom-3 right-0 z-10 opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+          title="Research this market"
         >
-          Research
-        </Button>
+          <OracleVisualization size={24} />
+        </button>
+      </div>
+
       </div>
     </div>
   )

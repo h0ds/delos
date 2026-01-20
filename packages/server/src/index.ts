@@ -96,60 +96,62 @@ app.get('/api/status', (_req, res) => {
 })
 
 app.get('/api/health', (_req, res) => {
+  // Only include providers that are actually enabled (configured for this instance)
+  const enabledProviders: Record<string, any> = {}
+
+  // NewsAPI - only if enabled
+  if (config.enableNewsAPI) {
+    enabledProviders.newsapi = {
+      enabled: true,
+      configured: !!config.newsApiKey,
+      status: config.newsApiKey ? 'ready' : 'missing-key'
+    }
+  }
+
+  // Google News - only if enabled
+  if (config.enableGoogleNews) {
+    enabledProviders['google-news'] = {
+      enabled: true,
+      configured: true,
+      status: 'ready'
+    }
+  }
+
+  // Reddit - only if enabled
+  if (config.enableReddit) {
+    enabledProviders.reddit = {
+      enabled: true,
+      configured: true,
+      status: 'ready'
+    }
+  }
+
+  // DeepSeek AI - only if configured
+  if (config.hasAiApi) {
+    enabledProviders.deepseek = {
+      enabled: true,
+      configured: !!config.aiApiKey,
+      status: config.aiApiKey ? 'ready' : 'missing-key'
+    }
+  }
+
+  // Polymarket - always available (no key required for public API)
+  enabledProviders.polymarket = {
+    enabled: true,
+    configured: true,
+    status: 'ready'
+  }
+
+  // Kalshi - always available (no key required for public API)
+  enabledProviders.kalshi = {
+    enabled: true,
+    configured: true,
+    status: 'ready'
+  }
+
   const health = {
     timestamp: new Date().toISOString(),
-    providers: {
-      newsapi: {
-        enabled: config.enableNewsAPI,
-        configured: !!config.newsApiKey,
-        status:
-          config.enableNewsAPI && config.newsApiKey
-            ? 'ready'
-            : config.enableNewsAPI
-              ? 'missing-key'
-              : 'disabled'
-      },
-      'google-news': {
-        enabled: config.enableGoogleNews,
-        configured: true,
-        status: config.enableGoogleNews ? 'ready' : 'disabled'
-      },
-      reddit: {
-        enabled: config.enableReddit,
-        configured: true,
-        status: config.enableReddit ? 'ready' : 'disabled'
-      },
-      deepseek: {
-        enabled: config.hasAiApi,
-        configured: !!config.aiApiKey,
-        status:
-          config.hasAiApi && config.aiApiKey
-            ? 'ready'
-            : config.hasAiApi
-              ? 'missing-key'
-              : 'disabled'
-      },
-      polymarket: {
-        enabled: config.hasPolymarketApi,
-        configured: !!config.polymarketApiKey,
-        status:
-          config.hasPolymarketApi && config.polymarketApiKey
-            ? 'ready'
-            : config.hasPolymarketApi
-              ? 'missing-key'
-              : 'disabled'
-      },
-      kalshi: {
-        enabled: config.hasKalshiApi,
-        configured: !!config.kalshiApiKey,
-        status:
-          config.hasKalshiApi && config.kalshiApiKey
-            ? 'ready'
-            : config.hasKalshiApi
-              ? 'missing-key'
-              : 'ready' // Kalshi doesn't require API key for public markets
-      }
-    }
+    providers: enabledProviders
   }
 
   res.json(health)

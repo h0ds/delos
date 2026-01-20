@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import { OracleVisualization } from './OracleVisualization'
 
 export function KalshiCard({ market, onQuickResearch, loading }) {
   return (
@@ -7,36 +7,18 @@ export function KalshiCard({ market, onQuickResearch, loading }) {
       {/* Background Gradient Glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      {/* Image Section */}
-      {market.image && (
-        <div className="relative w-full h-40 bg-gradient-to-br from-primary/10 to-muted/10 overflow-hidden">
-          <img
-            src={market.image}
-            alt={market.question}
-            className="w-full h-full object-cover opacity-75 group-hover:opacity-100 transition-all duration-300 group-hover:scale-105"
-            onError={e => {
-              e.target.style.display = 'none'
-            }}
-          />
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
-
-          {/* Kalshi Badge */}
-          <div className="absolute top-3 left-3 text-xs font-mono font-semibold text-primary bg-black/40 backdrop-blur-sm px-2 py-1 rounded-md">
-            Kalshi
-          </div>
-
-          {/* Category Badge */}
-          {market.category && (
-            <div className="absolute top-3 right-3 px-2.5 py-1 bg-primary/80 backdrop-blur-sm rounded-md text-xs font-mono text-primary-foreground border border-primary/50">
-              {market.category.toUpperCase()}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Oracle Visualization - Bottom Right Corner (Interactive) */}
+      <button
+        onClick={() => onQuickResearch(market.question)}
+        disabled={loading}
+        className="absolute bottom-3 right-3 z-10 opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Research this market"
+      >
+        <OracleVisualization />
+      </button>
 
       {/* Content Section */}
-      <div className="relative p-4 space-y-4">
+      <div className="relative p-4 space-y-4 pr-12">
         {/* Title */}
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
@@ -136,7 +118,7 @@ export function KalshiCard({ market, onQuickResearch, loading }) {
           disabled={loading}
           className="w-full font-mono text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed h-8 rounded-lg"
         >
-          Research 
+          Research
         </Button>
       </div>
     </div>

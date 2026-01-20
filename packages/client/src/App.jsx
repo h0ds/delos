@@ -166,26 +166,25 @@ function App() {
           <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
             {/* Search Section - Minimal */}
             <div className="animate-in-subtle flex justify-end">
-              <form onSubmit={handleSearch} className="flex gap-3 w-full max-w-2xl">
+              <form onSubmit={handleSearch} className="flex gap-3 w-90 max-w-2xl">
                 <div className="relative flex-1">
-                  <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
                   <Input
                     type="text"
                     value={query}
                     onChange={e => setQuery(e.target.value)}
                     placeholder="Research any market situation..."
-                    className="pl-10 pr-4 py-2.5 font-mono text-xs bg-card/40 border border-border/30 rounded-lg focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
+                    className="pl-4 pr-4 py-2.5 font-mono text-xs bg-card/40 border border-border/30 rounded-3xl focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
                     disabled={loading}
                   />
                 </div>
-                <Button type="submit" disabled={loading} className="btn-modern">
+                <Button type="submit" disabled={loading} className="btn-modern rounded-3xl">
                   {loading ? (
                     <>
-                      <Activity className="h-4 w-4 mr-2 animate-pulse" />
                       Searching
+                      <Search className="h-4 w-4 animate-pulse" />
                     </>
                   ) : (
-                    <>Search</>
+                    <><Search className="h-4 w-4" /></>
                   )}
                 </Button>
               </form>
