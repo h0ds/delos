@@ -2,25 +2,10 @@ import { TrendingUp, TrendingDown } from 'lucide-react'
 import { OracleVisualization } from './OracleVisualization'
 
 export function PolymarketCard({ market, onQuickResearch, loading }) {
-  const isDevMode = import.meta.env.DEV
-  const isMockData = market.market?.startsWith('poly-') // Mock data has specific ID format
-
   return (
     <div className="group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
       {/* Background Gradient Glow */}
       <div className="absolute inset-0 bg-card from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      {/* Source Indicator - Top Left (Subtle) */}
-      <div className="absolute top-2 left-2 z-20 text-xs font-mono text-muted-foreground/60 opacity-50 group-hover:opacity-70 transition-opacity">
-        polymarket
-      </div>
-
-      {/* Dev Data Source Indicator - Top Right (Very Subtle) */}
-      {isDevMode && (
-        <div className="absolute top-2 right-2 z-20 text-xs font-mono text-muted-foreground/40 opacity-40 group-hover:opacity-60 transition-opacity">
-          {isMockData ? 'mock' : 'live'}
-        </div>
-      )}
 
       {/* Content Section */}
       <div className="relative p-4 space-y-4">
@@ -98,7 +83,7 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
           )}
         </div>
 
-        {/* Status Badge + Source Indicator + Research Button */}
+        {/* Status Badge + Research Button */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {/* Status Badge */}
@@ -113,11 +98,6 @@ export function PolymarketCard({ market, onQuickResearch, loading }) {
                 {market.status === 'active' ? 'Open' : 'Closed'}
               </span>
             )}
-
-            {/* Source Badge - Inline */}
-            <span className="text-xs font-mono px-2 py-1 rounded-full bg-primary/10 text-primary/80 border border-primary/30">
-              polymarket
-            </span>
           </div>
 
           {/* Oracle Visualization - Research Button */}

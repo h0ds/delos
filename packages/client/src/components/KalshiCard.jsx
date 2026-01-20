@@ -2,25 +2,10 @@ import { TrendingUp, TrendingDown } from 'lucide-react'
 import { OracleVisualization } from './OracleVisualization'
 
 export function KalshiCard({ market, onQuickResearch, loading }) {
-  const isDevMode = import.meta.env.DEV
-  const isMockData = market.market?.startsWith('kalshi-') // Mock data has specific ID format
-
   return (
     <div className="group relative rounded-xl overflow-hidden bg-card/60 border border-border/40 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
       {/* Background Gradient Glow */}
       <div className="absolute inset-0 bg-card from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      {/* Source Indicator - Top Left (Subtle) */}
-      <div className="absolute top-2 left-2 z-20 text-xs font-mono text-muted-foreground/60 opacity-50 group-hover:opacity-70 transition-opacity">
-        kalshi
-      </div>
-
-      {/* Dev Data Source Indicator - Top Right (Very Subtle) */}
-      {isDevMode && (
-        <div className="absolute top-2 right-2 z-20 text-xs font-mono text-muted-foreground/40 opacity-40 group-hover:opacity-60 transition-opacity">
-          {isMockData ? 'mock' : 'live'}
-        </div>
-      )}
 
       {/* Content Section */}
       <div className="relative p-4 space-y-4">
@@ -98,12 +83,12 @@ export function KalshiCard({ market, onQuickResearch, loading }) {
           )}
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-end align-right gap-1">
-          {market.status && (
-            <div className="flex items-center justify-end">
+        {/* Status Badge + Research Button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {market.status && (
               <span
-                className={`text-xs font-mono px-3 py-1 rounded-full border ${
+                className={`text-xs font-mono px-2 py-1 rounded-full border ${
                   market.status === 'active'
                     ? 'bg-bullish/10 text-bullish border-bullish/30'
                     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
@@ -111,14 +96,14 @@ export function KalshiCard({ market, onQuickResearch, loading }) {
               >
                 {market.status === 'active' ? 'Open' : 'Closed'}
               </span>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Oracle Visualization - Bottom Right Corner (Interactive) */}
+          {/* Oracle Visualization - Research Button */}
           <button
             onClick={() => onQuickResearch(market.question)}
             disabled={loading}
-            className="bottom-3 right-0 z-10 opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Research this market"
           >
             <OracleVisualization size={24} />

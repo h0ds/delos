@@ -10,6 +10,7 @@ import { OracleHeader } from '@/components/OracleHeader'
 import { OracleVisualization } from '@/components/OracleVisualization'
 import { PolymarketCard } from '@/components/PolymarketCard'
 import { KalshiCard } from '@/components/KalshiCard'
+import { PolymarketIcon, KalshiIcon } from '@/components/MarketIcons'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
 
 function App() {
@@ -201,9 +202,10 @@ function App() {
                   </form>
                 </div>
 
-                {/* Markets Grid - 4 Columns */}
+                {/* Markets Grid - Split by Source */}
                 {initialMarkets && initialMarkets.length > 0 && (
-                  <div className="space-y-4 animate-fade-in-slow">
+                  <div className="space-y-6 animate-fade-in-slow">
+                    {/* Header with Data Quality */}
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-mono text-muted-foreground">
                         Featured Markets
@@ -238,42 +240,56 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {/* Polymarket */}
-                      {initialMarkets
-                        .filter(m => m.source === 'polymarket' || !m.source)
-                        .slice(0, 4)
-                        .map((market, i) => (
-                          <div
-                            key={`poly-${i}`}
-                            className="stagger-item"
-                            style={{ animationDelay: `${i * 100}ms` }}
-                          >
-                            <PolymarketCard
-                              market={market}
-                              onQuickResearch={handleQuickResearch}
-                              loading={loading}
-                            />
-                          </div>
-                        ))}
+                    {/* Polymarket Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 px-1">
+                        <PolymarketIcon size={18} className="text-primary" />
+                        <h2 className="text-sm font-mono text-muted-foreground">Polymarket</h2>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {initialMarkets
+                          .filter(m => m.source === 'polymarket' || !m.source)
+                          .slice(0, 4)
+                          .map((market, i) => (
+                            <div
+                              key={`poly-${i}`}
+                              className="stagger-item"
+                              style={{ animationDelay: `${i * 100}ms` }}
+                            >
+                              <PolymarketCard
+                                market={market}
+                                onQuickResearch={handleQuickResearch}
+                                loading={loading}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    </div>
 
-                      {/* Kalshi */}
-                      {initialMarkets
-                        .filter(m => m.source === 'kalshi')
-                        .slice(0, 4)
-                        .map((market, i) => (
-                          <div
-                            key={`kalshi-${i}`}
-                            className="stagger-item"
-                            style={{ animationDelay: `${(i + 2) * 100}ms` }}
-                          >
-                            <KalshiCard
-                              market={market}
-                              onQuickResearch={handleQuickResearch}
-                              loading={loading}
-                            />
-                          </div>
-                        ))}
+                    {/* Kalshi Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 px-1">
+                        <KalshiIcon size={18} className="text-primary" />
+                        <h2 className="text-sm font-mono text-muted-foreground">Kalshi</h2>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {initialMarkets
+                          .filter(m => m.source === 'kalshi')
+                          .slice(0, 4)
+                          .map((market, i) => (
+                            <div
+                              key={`kalshi-${i}`}
+                              className="stagger-item"
+                              style={{ animationDelay: `${(i + 2) * 100}ms` }}
+                            >
+                              <KalshiCard
+                                market={market}
+                                onQuickResearch={handleQuickResearch}
+                                loading={loading}
+                              />
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   </div>
                 )}
