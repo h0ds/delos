@@ -26,7 +26,7 @@ export function MarketComparisonPage({ market1, market2, onBack, onSwap }) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-6 py-6 animate-fade-in">
+    <div className="w-full max-w-5xl mx-auto px-6 py-6 animate-fade-in">
       {/* Header with Navigation */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">

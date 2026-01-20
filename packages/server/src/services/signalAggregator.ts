@@ -348,6 +348,11 @@ export async function acquireSignalsWithAnalysis(query: string) {
   // Import here to avoid circular dependencies
   const { analyzeSignalsWithAI } = await import('./aiIntelligence.js')
   const { getPolymarketMarkets } = await import('./polymarketService.js')
+  const { enhanceSignals, analyzeSignalPatterns } = await import('./signalEnhancer.js')
+
+  // Enhance signals with confidence and trend analysis
+  const enhancedSignals = enhanceSignals(signals)
+  const signalAnalytics = analyzeSignalPatterns(signals)
 
   const [analysis, markets] = await Promise.all([
     analyzeSignalsWithAI(signals, query),
@@ -355,7 +360,8 @@ export async function acquireSignalsWithAnalysis(query: string) {
   ])
 
   return {
-    signals,
+    signals: enhancedSignals,
+    signalAnalytics,
     analysis: {
       sentiment: analysis.overallSentiment,
       sentimentScore: analysis.sentimentScore,

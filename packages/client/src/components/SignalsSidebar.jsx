@@ -1,7 +1,7 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, TrendingUp, TrendingDown, Zap, AlertCircle, Info } from 'lucide-react'
+import { Clock, TrendingUp, TrendingDown, Zap, AlertCircle, Info, Gauge } from 'lucide-react'
 
 export function SignalsSidebar({ signals }) {
   const getSentimentIndicator = sentiment => {
@@ -15,6 +15,13 @@ export function SignalsSidebar({ signals }) {
     if (impact > 0.4)
       return { label: 'Medium', className: 'text-yellow-400 bg-yellow-500/10', icon: AlertCircle }
     return { label: 'Low', className: 'text-blue-400 bg-blue-500/10', icon: Info }
+  }
+
+  const getConfidenceColor = confidence => {
+    if (confidence >= 80) return 'text-bullish'
+    if (confidence >= 60) return 'text-primary'
+    if (confidence >= 40) return 'text-yellow-400'
+    return 'text-bearish'
   }
 
   const formatTime = dateStr => {
@@ -49,6 +56,7 @@ export function SignalsSidebar({ signals }) {
           {signals.slice(0, 20).map((signal, index) => {
             const sentiment = getSentimentIndicator(signal.sentiment)
             const impact = getImpactIndicator(signal.impact || 0)
+            const confidence = signal.confidence || 0
             const SentimentIcon = sentiment.icon
             const ImpactIcon = impact.icon
 
@@ -58,19 +66,25 @@ export function SignalsSidebar({ signals }) {
                 className="stagger-item group p-2.5 rounded-md border border-border/30 hover:border-border/60 hover:bg-card/40 transition-all duration-200 cursor-pointer"
                 style={{ animationDelay: `${index * 20}ms` }}
               >
-                {/* Title + Sentiment */}
+                {/* Title + Sentiment + Confidence */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <p className="text-xs font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors flex-1">
                     {signal.title}
                   </p>
-                  {SentimentIcon && (
-                    <SentimentIcon
-                      className={`h-3 w-3 ${sentiment.className} flex-shrink-0 mt-0.5`}
-                    />
-                  )}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {SentimentIcon && (
+                      <SentimentIcon className={`h-3 w-3 ${sentiment.className}`} />
+                    )}
+                    {confidence > 0 && (
+                      <Gauge
+                        className={`h-3 w-3 ${getConfidenceColor(confidence)}`}
+                        title={`${confidence}% Confidence`}
+                      />
+                    )}
+                  </div>
                 </div>
 
-                {/* Source + Sentiment Label + Impact Badge */}
+                {/* Source + Category + Impact Badge */}
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <span className="text-xs text-muted-foreground truncate">{signal.source}</span>
@@ -103,6 +117,29 @@ export function SignalsSidebar({ signals }) {
                         {market}
                       </Badge>
                     ))}
+                  </div>
+                )}
+
+                {/* Confidence Score Display */}
+                {confidence > 0 && (
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <div className="flex-1 h-1.5 bg-border/40 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          confidence >= 80
+                            ? 'bg-bullish'
+                            : confidence >= 60
+                              ? 'bg-primary'
+                              : 'bg-yellow-500'
+                        }`}
+                        style={{ width: `${confidence}%` }}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-mono font-semibold ${getConfidenceColor(confidence)}`}
+                    >
+                      {confidence}%
+                    </span>
                   </div>
                 )}
 

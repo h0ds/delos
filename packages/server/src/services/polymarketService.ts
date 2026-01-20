@@ -365,3 +365,36 @@ export async function getMarketProbabilities(marketId: string): Promise<number[]
     return []
   }
 }
+
+/**
+ * Fetch historical market data for a given market ID
+ * Note: Gamma API may not have a dedicated history endpoint
+ * This is a placeholder for potential future integration
+ */
+export async function getMarketHistory(marketId: string): Promise<any[]> {
+  try {
+    console.log(`[polymarket:history] fetching history for market: ${marketId}`)
+
+    // Attempt to fetch from Gamma API markets endpoint with historical data
+    // This endpoint may return historical information if available
+    const response = await axios.get(`${GAMMA_MARKETS_ENDPOINT}/${marketId}`, {
+      timeout: 5000,
+      httpAgent,
+      httpsAgent
+    })
+
+    if (response.data) {
+      console.log('[polymarket:history] ✅ market data retrieved')
+      // Return raw market data - client can format as needed
+      return [response.data]
+    }
+
+    return []
+  } catch (error) {
+    console.warn(
+      '[polymarket:history] ⚠️ history endpoint not available:',
+      error instanceof Error ? error.message : error
+    )
+    return []
+  }
+}

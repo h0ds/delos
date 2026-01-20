@@ -24,6 +24,7 @@ export interface KalshiRawMarket {
 
 export interface KalshiSignal {
   market: string
+  slug?: string // For linking to market website
   question: string
   description?: string
   image?: string
@@ -76,6 +77,7 @@ function rawMarketToSignal(rawMarket: KalshiRawMarket, query: string): KalshiSig
 
   return {
     market: rawMarket.id,
+    slug: rawMarket.ticker, // Use ticker as URL slug for Kalshi
     question: rawMarket.title,
     description: rawMarket.subtitle,
     image: rawMarket.image_url,
@@ -231,6 +233,36 @@ export async function getMarketsByQuery(query: string): Promise<KalshiSignal[]> 
       console.error('[kalshi] ⚠️  Network error - API may be unreachable.')
     }
 
+    return []
+  }
+}
+
+/**
+ * Fetch historical market data for a specific Kalshi market
+ * Per Kalshi API docs: https://docs.kalshi.com/getting_started/api_keys
+ */
+export async function getMarketHistory(marketTicker: string): Promise<any[]> {
+  try {
+    console.log(`[kalshi:history] fetching history for market: ${marketTicker}`)
+
+    // Kalshi API endpoint for market history
+    const response = await axios.get(`${KALSHI_PUBLIC_API}/markets/${marketTicker}/history`, {
+      timeout: 8000,
+      httpAgent,
+      httpsAgent
+    })
+
+    if (response.data && response.data.history) {
+      console.log(`[kalshi:history] ✅ fetched ${response.data.history.length} price points`)
+      return response.data.history
+    }
+
+    console.warn('[kalshi:history] ⚠️ no history data returned')
+    return []
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.warn(`[kalshi:history] ⚠️ failed to fetch history: ${errorMsg}`)
+    // Return empty array - client will use mock data as fallback
     return []
   }
 }

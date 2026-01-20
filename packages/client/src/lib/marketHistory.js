@@ -6,18 +6,65 @@ import axios from 'axios'
  */
 export async function getMarketHistory(marketId, source = 'polymarket', days = 7) {
   try {
-    // For now, return mock data
-    // In production, connect to real market history APIs:
-    // - Polymarket: https://gamma-api.polymarket.com/history
-    // - Kalshi: https://api.kalshi.com/v2/history
+    // Try to fetch from backend API first
+    console.log(`[market-history] fetching ${days}d history from backend for ${source}:${marketId}`)
+    const response = await axios.get(
+      `http://localhost:3333/api/markets/${source}/${marketId}/history`,
+      { timeout: 5000 }
+    )
 
-    console.log(`[market-history] fetching ${days}d history for ${source}:${marketId}`)
+    if (response.data.success && response.data.history && response.data.history.length > 0) {
+      console.log(`[market-history] ✅ fetched ${response.data.historyPoints} history points`)
+      // Format backend data to match client expectations
+      return formatHistoryData(response.data.history, source)
+    }
 
-    const mockHistory = generateMockHistory(days)
-    return mockHistory
-  } catch (error) {
-    console.error('[market-history] error:', error)
+    // If no data, generate mock
+    console.log('[market-history] ⚠️ no history data from backend, using mock')
     return generateMockHistory(days)
+  } catch (error) {
+    console.warn('[market-history] error fetching from backend:', error.message)
+    // Always fallback to mock data
+    return generateMockHistory(days)
+  }
+}
+
+/**
+ * Format backend history data to client display format
+ */
+function formatHistoryData(history, source) {
+  if (!Array.isArray(history) || history.length === 0) {
+    return generateMockHistory(7)
+  }
+
+  try {
+    // Format based on source API
+    if (source === 'polymarket') {
+      // Polymarket history format handling
+      return history.map((point, idx) => ({
+        dateDisplay: new Date(
+          point.timestamp || Date.now() - (history.length - idx) * 86400000
+        ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        volume: parseFloat(point.volume || point.volumeNum || 0),
+        liquidity: parseFloat(point.liquidity || point.liquidityNum || 0),
+        trades: parseInt(point.trades || 0)
+      }))
+    } else if (source === 'kalshi') {
+      // Kalshi history format handling (price history)
+      return history.map((point, idx) => ({
+        dateDisplay: new Date(
+          point.timestamp || Date.now() - (history.length - idx) * 86400000
+        ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        volume: parseFloat(point.volume || 0),
+        yesPrice: parseFloat(point.yes_price || point.yesPrice || 0),
+        noPrice: parseFloat(point.no_price || point.noPrice || 0)
+      }))
+    }
+
+    return generateMockHistory(7)
+  } catch (error) {
+    console.warn('[market-history] error formatting data:', error.message)
+    return generateMockHistory(7)
   }
 }
 

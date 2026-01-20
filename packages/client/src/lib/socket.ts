@@ -16,6 +16,18 @@ export interface PolymarketData {
   status?: string
 }
 
+export interface MarketUpdate {
+  source: 'polymarket' | 'kalshi'
+  marketId: string
+  question: string
+  outcomes: Array<{ name: string; probability: number }>
+  volume24h: number
+  liquidity?: number
+  timestamp: number
+  priceChangePercent?: number
+  priceChangeDirection?: 'up' | 'down' | 'stable'
+}
+
 export interface ServerToClientEvents {
   signal: (data: Signal) => void
   signals: (data: Signal[]) => void
@@ -23,6 +35,7 @@ export interface ServerToClientEvents {
   'scan:complete': (data: { query: string; count: number }) => void
   'oracle:analysis': (data: any) => void
   'oracle:markets': (data: PolymarketData[]) => void
+  'market:update': (data: MarketUpdate[]) => void
   error: (data: { message: string }) => void
   status: (data: { status: string }) => void
 }

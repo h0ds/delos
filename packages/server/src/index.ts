@@ -4,9 +4,16 @@ import cors from 'cors'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { acquireSignals, acquireSignalsWithAnalysis } from './services/signalAggregator.js'
-import { getFeaturedMarkets as getPolymarketFeatured } from './services/polymarketService.js'
-import { getFeaturedMarkets as getKalshiFeatured } from './services/kalshiService.js'
+import {
+  getFeaturedMarkets as getPolymarketFeatured,
+  getMarketHistory as getPolymarketHistory
+} from './services/polymarketService.js'
+import {
+  getFeaturedMarkets as getKalshiFeatured,
+  getMarketHistory as getKalshiHistory
+} from './services/kalshiService.js'
 import { validateSignalQuality, getDataQualityMessage } from './services/dataQuality.js'
+import { MarketBroadcaster } from './services/marketBroadcaster.js'
 import { config } from './config.js'
 import type {
   ServerToClientEvents,
@@ -23,6 +30,9 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEve
     cors: config.cors
   }
 )
+
+// Initialize Market Broadcaster
+const marketBroadcaster = new MarketBroadcaster(io)
 
 // Request Deduplication: Cache for In-Flight Queries
 // Maps Query String -> Promise Of Results
@@ -310,8 +320,45 @@ app.get('/api/signals/:query', async (req, res) => {
   }
 })
 
+app.get('/api/markets/:source/:id/history', async (req, res) => {
+  try {
+    const { source, id } = req.params
+    if (!source || !id) {
+      return res.status(400).json({ success: false, error: 'Missing source or market id' })
+    }
+
+    console.log(`[api/markets/history] fetching ${source} market history for: ${id}`)
+
+    let history: any[] = []
+
+    if (source === 'polymarket') {
+      history = await getPolymarketHistory(id)
+    } else if (source === 'kalshi') {
+      history = await getKalshiHistory(id)
+    } else {
+      return res.status(400).json({ success: false, error: 'Unknown market source' })
+    }
+
+    return res.json({
+      success: true,
+      source,
+      marketId: id,
+      timestamp: new Date().toISOString(),
+      historyPoints: history.length,
+      history
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error(`[api/markets/history] ❌ error: ${message}`)
+    res.status(500).json({ success: false, error: message })
+  }
+})
+
 io.on('connection', socket => {
   console.log(`[socket] client connected: ${socket.id}`)
+
+  // Start broadcasting market updates to this client
+  marketBroadcaster.startBroadcasting()
 
   // Send Featured Markets On Connect
   ;(async () => {
@@ -434,6 +481,10 @@ io.on('connection', socket => {
 
   socket.on('disconnect', () => {
     console.log(`[socket] client disconnected: ${socket.id}`)
+    // Stop broadcasting when no clients connected
+    if (io.engine.clientsCount === 0) {
+      marketBroadcaster.stopBroadcasting()
+    }
   })
 })
 

@@ -1,4 +1,13 @@
-import { ArrowLeft, ExternalLink, Users, DollarSign, Target, Calendar, Zap } from 'lucide-react'
+import {
+  ArrowLeft,
+  ExternalLink,
+  Users,
+  DollarSign,
+  Target,
+  Calendar,
+  Zap,
+  TrendingUp
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -6,7 +15,11 @@ import { PolymarketIcon, KalshiIcon } from './MarketIcons'
 import { ProbabilityChart } from './charts/ProbabilityChart'
 import { VolumeChart } from './charts/VolumeChart'
 import { LiquidityCard } from './charts/LiquidityCard'
+import { TrendAnalysisChart } from './charts/TrendAnalysisChart'
 import { RelatedSignalsSection } from './RelatedSignalsSection'
+import { useState, useEffect } from 'react'
+import { analyzeMarket } from '@/lib/analyticsEngine'
+import { getMarketHistory } from '@/lib/marketHistory'
 
 export function MarketDetailPage({
   market,
@@ -17,6 +30,49 @@ export function MarketDetailPage({
   onSelectMarket,
   relatedSignals = []
 }) {
+  const [analytics, setAnalytics] = useState(null)
+  const [historyLoading, setHistoryLoading] = useState(true)
+
+  // Fetch and analyze market history
+  useEffect(() => {
+    async function loadAnalytics() {
+      try {
+        setHistoryLoading(true)
+        // Use market ID or slug as fallback
+        const marketId = market.market || market.id || market.slug || 'unknown'
+        const source = market.source || 'polymarket'
+
+        const history = await getMarketHistory(marketId, source, 7)
+
+        // Transform history into TrendPoints with mock sentiment data
+        const trendPoints = history.map((point, idx) => ({
+          timestamp: Date.now() - (history.length - idx) * 3600000, // 1 hour apart
+          value: point.volume || 0, // Using volume as proxy for activity
+          sentiment: (Math.random() - 0.5) * 2 // Random sentiment -1 to 1 for now
+        }))
+
+        // Generate sentiment scores from market outcomes if available
+        const sentimentScores = market.outcomes?.map(o => o.probability * 2 - 1) || []
+
+        // Analyze market data - only if we have valid trend points
+        if (trendPoints.length > 0 && trendPoints.some(p => !isNaN(p.value))) {
+          const marketAnalytics = analyzeMarket(trendPoints, sentimentScores)
+          setAnalytics(marketAnalytics)
+        } else {
+          console.warn('[market-detail] invalid trend points, skipping analytics')
+        }
+      } catch (error) {
+        console.error('[market-detail] error loading analytics:', error)
+      } finally {
+        setHistoryLoading(false)
+      }
+    }
+
+    if (market) {
+      loadAnalytics()
+    }
+  }, [market?.market, market?.id, market?.slug, market?.source])
+
   if (!market) return null
 
   const isPolymarket = market.source === 'polymarket' || !market.source
@@ -30,7 +86,7 @@ export function MarketDetailPage({
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border/40 bg-card/30 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               onClick={onBack}
@@ -88,7 +144,7 @@ export function MarketDetailPage({
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
         {/* Title Section */}
         <div className="space-y-4">
           <div className="space-y-2">
@@ -168,6 +224,40 @@ export function MarketDetailPage({
                     marketId={market.market}
                     source={market.source}
                   />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Advanced Analytics Section */}
+            {analytics && !historyLoading && analytics.priceHistory && (
+              <div className="space-y-4 animate-in-subtle">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-foreground">Advanced Analytics</h2>
+                </div>
+                <div className="min-h-96">
+                  <TrendAnalysisChart
+                    priceHistory={
+                      analytics.priceHistory.map((val, idx) => ({
+                        timestamp: Date.now() - (analytics.priceHistory.length - idx) * 3600000,
+                        value: val,
+                        sentiment: 0
+                      })) || []
+                    }
+                    analytics={analytics}
+                    marketName={market.question}
+                  />
+                </div>
+              </div>
+            )}
+
+            {historyLoading && (
+              <Card className="border-border/40 bg-card/40">
+                <CardContent className="py-8 text-center">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    Loading analytics...
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -258,7 +348,7 @@ export function RelatedMarketsSection({ market, allMarkets, onSelectMarket, onCo
   if (relatedMarkets.length === 0) return null
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 border-t border-border/40">
+    <div className="max-w-5xl mx-auto px-6 py-8 border-t border-border/40">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold font-mono">Related Markets in {market.category}</h3>

@@ -93,6 +93,7 @@ const MOCK_POLYMARKETS: MockMarket[] = [
 const MOCK_KALSHI_MARKETS: MockMarket[] = [
   {
     market: 'kalshi-001',
+    slug: 'unemployment-rate-2024',
     question: 'Will the US unemployment rate be below 4% in March 2024?',
     description: 'BLS unemployment rate',
     category: 'Economics',
@@ -109,6 +110,7 @@ const MOCK_KALSHI_MARKETS: MockMarket[] = [
   },
   {
     market: 'kalshi-002',
+    slug: 'eth-price-prediction-2024',
     question: 'Will Ethereum break $2,500 by February 2024?',
     description: 'Ethereum price prediction',
     category: 'Cryptocurrency',
@@ -125,6 +127,7 @@ const MOCK_KALSHI_MARKETS: MockMarket[] = [
   },
   {
     market: 'kalshi-003',
+    slug: 'inflation-cpi-2024',
     question: 'Will inflation (CPI) be above 3% in January 2024?',
     description: 'Consumer Price Index year-over-year',
     category: 'Economics',
@@ -141,6 +144,7 @@ const MOCK_KALSHI_MARKETS: MockMarket[] = [
   },
   {
     market: 'kalshi-004',
+    slug: 'tech-outperformance-2024',
     question: 'Will tech sector (QQQ) outperform S&P 500 in 2024?',
     description: 'Nasdaq-100 vs S&P 500 performance',
     category: 'Finance',
