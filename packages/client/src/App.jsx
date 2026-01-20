@@ -13,10 +13,13 @@ import { KalshiCard } from '@/components/KalshiCard'
 import { PolymarketIcon, KalshiIcon } from '@/components/MarketIcons'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
 import { MarketDetailPage } from '@/components/MarketDetailPage'
+import { MarketComparisonPage } from '@/components/MarketComparisonPage'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', or 'detail'
+  const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', 'detail', or 'compare'
   const [selectedMarket, setSelectedMarket] = useState(null)
+  const [comparisonMarket1, setComparisonMarket1] = useState(null)
+  const [comparisonMarket2, setComparisonMarket2] = useState(null)
   const [query, setQuery] = useState('')
   const [signals, setSignals] = useState([])
   const [markets, setMarkets] = useState([])
@@ -124,37 +127,78 @@ function App() {
     }
   }, [searchedQuery])
 
+  const fetchSignalsFromAPI = async queryText => {
+    try {
+      console.log(`[api] fetching signals for: "${queryText}"`)
+      const response = await fetch(
+        `http://localhost:3333/api/signals/${encodeURIComponent(queryText)}`
+      )
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const data = await response.json()
+      if (data.success) {
+        setSignals(data.signals || [])
+        setMarkets(data.relatedMarkets || [])
+        setError(null)
+        return true
+      }
+    } catch (err) {
+      console.warn('[api] failed to fetch signals:', err)
+      return false
+    }
+    return false
+  }
+
   const handleSearch = e => {
     e.preventDefault()
     setCurrentPage('research') // Navigate to research page
-    if (!query.trim()) {
-      const mockSignals = generateMockSignals(query || 'bitcoin', 25)
+    const trimmedQuery = query.trim()
+
+    if (!trimmedQuery) {
+      const mockSignals = generateMockSignals('bitcoin', 25)
       setSignals(mockSignals)
-      setSearchedQuery(query || 'bitcoin')
+      setSearchedQuery('bitcoin')
       setLoading(false)
+      setQuery('')
       return
     }
 
-    if (connected) {
-      socket.emit('signal:query', query.trim())
-    } else {
-      const mockSignals = generateMockSignals(query.trim(), 25)
-      setSignals(mockSignals)
-      setSearchedQuery(query.trim())
-      setLoading(false)
-    }
+    setLoading(true)
+    setSearchedQuery(trimmedQuery)
+
+    // Try REST API first, fallback to WebSocket, then mock data
+    fetchSignalsFromAPI(trimmedQuery).then(success => {
+      if (!success && connected) {
+        // Fallback to WebSocket
+        socket.emit('signal:query', trimmedQuery)
+      } else if (!success) {
+        // Fallback to mock data
+        const mockSignals = generateMockSignals(trimmedQuery, 25)
+        setSignals(mockSignals)
+        setLoading(false)
+      }
+    })
+
     setQuery('')
   }
 
   const handleQuickResearch = queryText => {
-    if (connected) {
-      socket.emit('signal:query', queryText)
-    } else {
-      const mockSignals = generateMockSignals(queryText, 25)
-      setSignals(mockSignals)
-      setSearchedQuery(queryText)
-      setLoading(false)
-    }
+    setLoading(true)
+    setSearchedQuery(queryText)
+    setCurrentPage('research')
+
+    // Try REST API first, fallback to WebSocket, then mock data
+    fetchSignalsFromAPI(queryText).then(success => {
+      if (!success && connected) {
+        // Fallback to WebSocket
+        socket.emit('signal:query', queryText)
+      } else if (!success) {
+        // Fallback to mock data
+        const mockSignals = generateMockSignals(queryText, 25)
+        setSignals(mockSignals)
+        setLoading(false)
+      }
+    })
   }
 
   const handleMarketSelect = market => {
@@ -165,6 +209,30 @@ function App() {
   const handleBackFromDetail = () => {
     setSelectedMarket(null)
     setCurrentPage('home')
+  }
+
+  const handleStartComparison = market => {
+    setComparisonMarket1(market)
+    setComparisonMarket2(null)
+    setCurrentPage('compare')
+  }
+
+  const handleSelectSecondMarket = market => {
+    if (comparisonMarket1?.market !== market.market) {
+      setComparisonMarket2(market)
+    }
+  }
+
+  const handleBackFromComparison = () => {
+    setComparisonMarket1(null)
+    setComparisonMarket2(null)
+    setCurrentPage('home')
+  }
+
+  const handleSwapComparisonMarkets = () => {
+    const temp = comparisonMarket1
+    setComparisonMarket1(comparisonMarket2)
+    setComparisonMarket2(temp)
   }
 
   return (
@@ -183,36 +251,55 @@ function App() {
       <div className="relative flex flex-1 overflow-hidden">
         {/* Main Content Area with Flip Animation */}
         <main className="flex-1 overflow-y-auto">
-          {currentPage === 'detail' && selectedMarket ? (
+          {currentPage === 'compare' && comparisonMarket1 ? (
+            <div key="compare-content" className="animate-flip-in">
+              <MarketComparisonPage
+                market1={comparisonMarket1}
+                market2={comparisonMarket2}
+                onBack={handleBackFromComparison}
+                onSwap={handleSwapComparisonMarkets}
+              />
+            </div>
+          ) : currentPage === 'detail' && selectedMarket ? (
             <div key="detail-content" className="animate-flip-in">
-              <MarketDetailPage market={selectedMarket} onBack={handleBackFromDetail} />
+              <MarketDetailPage
+                market={selectedMarket}
+                onBack={handleBackFromDetail}
+                onQuickResearch={handleQuickResearch}
+                onCompare={handleStartComparison}
+                allMarkets={initialMarkets}
+                onSelectMarket={handleMarketSelect}
+              />
             </div>
           ) : (
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
               {currentPage === 'home' ? (
                 <div key="home-content" className="animate-flip-in space-y-6">
-                  {/* Search Section - Minimal */}
-                  <div className="animate-in-subtle flex justify-end">
-                    <form onSubmit={handleSearch} className="flex gap-3 w-90 max-w-2xl">
-                      <div className="relative flex-1">
+                  {/* Search Section - Minimal & Compact */}
+                  <div className="animate-in-subtle flex justify-center">
+                    <form onSubmit={handleSearch} className="flex gap-2 items-center h-9">
+                      <div className="relative w-64">
                         <Input
                           type="text"
                           value={query}
                           onChange={e => setQuery(e.target.value)}
-                          placeholder="Research any market situation..."
-                          className="pl-4 pr-4 py-2.5 font-mono text-xs bg-card/40 border border-border/30 rounded-3xl focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
+                          placeholder="Research market..."
+                          className="pl-3 pr-3 py-2 text-xs h-9 bg-card/40 border border-border/30 rounded-md focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all duration-300 backdrop-blur-sm hover:border-border/50 hover:bg-card/60"
                           disabled={loading}
                         />
                       </div>
-                      <Button type="submit" disabled={loading} className="btn-modern rounded-3xl">
+                      <Button
+                        type="submit"
+                        disabled={loading}
+                        className="btn-modern px-3 h-9 text-xs"
+                      >
                         {loading ? (
                           <>
-                            Searching
-                            <Search className="h-4 w-4 animate-pulse" />
+                            <Search className="h-3 w-3" />
                           </>
                         ) : (
                           <>
-                            <Search className="h-4 w-4" />
+                            <Search className="h-3 w-3" />
                           </>
                         )}
                       </Button>

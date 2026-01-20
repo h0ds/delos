@@ -270,6 +270,46 @@ app.get('/api/featured-markets', async (_req, res) => {
   }
 })
 
+app.get('/api/signals/:query', async (req, res) => {
+  try {
+    const query = req.params.query
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ success: false, error: 'Invalid query parameter' })
+    }
+
+    console.log(`[api/signals] 🔍 processing query: "${query}"`)
+
+    // Use enhanced analysis if AI API is available
+    if (config.hasAiApi || config.hasPolymarketApi) {
+      const result = await acquireSignalsWithAnalysis(query)
+      return res.json({
+        success: true,
+        query,
+        timestamp: new Date().toISOString(),
+        count: result.signals.length,
+        signals: result.signals,
+        analysis: result.analysis,
+        relatedMarkets: result.relatedMarkets || []
+      })
+    } else {
+      // Fallback to basic signal acquisition
+      const signals = await acquireSignals(query)
+      return res.json({
+        success: true,
+        query,
+        timestamp: new Date().toISOString(),
+        count: signals.length,
+        signals,
+        relatedMarkets: []
+      })
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error(`[api/signals] ❌ error: ${message}`)
+    res.status(500).json({ success: false, error: message })
+  }
+})
+
 io.on('connection', socket => {
   console.log(`[socket] client connected: ${socket.id}`)
 
