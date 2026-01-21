@@ -1,11 +1,15 @@
 /**
  * Advanced Analytics Engine for Market Trend Predictions
  * Provides:
- * - Trend analysis and predictions using linear regression
- * - Sentiment correlation with market movements
- * - Volatility calculations
+ * - Trend analysis and predictions using linear regression (d3-regression)
+ * - Sentiment correlation with market movements (simple-statistics)
+ * - Volatility calculations with confidence intervals
  * - Support/Resistance level detection
+ * - Technical indicators (Bollinger Bands, RSI, MACD)
  */
+
+import { regressionLinear } from 'd3-regression'
+import * as ss from 'simple-statistics'
 
 export interface TrendPoint {
   timestamp: number
@@ -24,6 +28,10 @@ export interface TrendPrediction {
   supportLevel?: number
   resistanceLevel?: number
   timeframe: '1h' | '24h' | '7d'
+  confidenceInterval?: {
+    lower: number
+    upper: number
+  }
 }
 
 export interface SentimentCorrelation {
@@ -32,6 +40,22 @@ export interface SentimentCorrelation {
   strength: 'strong' | 'moderate' | 'weak'
   direction: 'aligned' | 'diverging'
   predictiveValue: number // 0-100% confidence
+}
+
+export interface BollingerBands {
+  upper: number[]
+  middle: number[]
+  lower: number[]
+}
+
+export interface TechnicalIndicators {
+  rsi?: number // Relative Strength Index (0-100)
+  bollingerBands?: BollingerBands
+  macd?: {
+    macd: number
+    signal: number
+    histogram: number
+  }
 }
 
 export interface MarketAnalytics {
@@ -49,62 +73,66 @@ export interface MarketAnalytics {
     change24h: number
     change7d: number
   }
+  technicalIndicators?: TechnicalIndicators
 }
 
 /**
- * Linear regression using least squares method
- * Returns slope and intercept for predicting future values
+ * Linear regression using d3-regression
+ * Returns slope, intercept, R², and confidence intervals
  */
 function linearRegression(points: TrendPoint[]): {
   slope: number
   intercept: number
   rSquared: number
+  confidenceInterval: { lower: number; upper: number } | null
 } {
   if (points.length < 2) {
-    return { slope: 0, intercept: 0, rSquared: 0 }
+    return { slope: 0, intercept: 0, rSquared: 0, confidenceInterval: null }
   }
 
-  const n = points.length
-  let sumX = 0
-  let sumY = 0
-  let sumXY = 0
-  let sumX2 = 0
-  let sumY2 = 0
+  // Prepare data for d3-regression: [x, y] pairs where x is index
+  const data: [number, number][] = points.map((p, i) => [i, p.value])
 
-  for (let i = 0; i < n; i++) {
-    const x = i // x represents position in sequence
-    const y = points[i].value
+  // Create regression - d3-regression API is simpler than expected
+  const regression = regressionLinear()(data)
 
-    sumX += x
-    sumY += y
-    sumXY += x * y
-    sumX2 += x * x
-    sumY2 += y * y
+  if (!regression) {
+    return { slope: 0, intercept: 0, rSquared: 0, confidenceInterval: null }
   }
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
-  const intercept = (sumY - slope * sumX) / n
+  // d3-regression returns object with properties: a (slope), b (intercept)
+  // Formula: y = a*x + b
+  const slope = regression.a
+  const intercept = regression.b
 
-  // Calculate R² (coefficient of determination)
-  const meanY = sumY / n
-  let ssTotal = 0
-  let ssResidual = 0
+  // Calculate R² manually (using residuals)
+  const actual = data.map(d => d[1])
+  const predicted = data.map(d => intercept + slope * d[0])
 
-  for (let i = 0; i < n; i++) {
-    const predicted = intercept + slope * i
-    const actual = points[i].value
-    ssTotal += (actual - meanY) * (actual - meanY)
-    ssResidual += (actual - predicted) * (actual - predicted)
-  }
-
-  // Fix: Handle zero ssTotal (flat price line) and ensure R² is in [0, 1]
+  const meanActual = ss.mean(actual)
+  const ssTotal = actual.reduce((sum, val) => sum + Math.pow(val - meanActual, 2), 0)
+  const ssResidual = actual.reduce((sum, val, i) => sum + Math.pow(val - predicted[i], 2), 0)
   const rSquared = ssTotal > 0 ? Math.max(0, Math.min(1, 1 - ssResidual / ssTotal)) : 0
 
-  return { slope, intercept, rSquared }
+  // Calculate confidence interval (95% CI)
+  const residuals = actual.map((y, i) => y - predicted[i])
+  const stdError = ss.standardDeviation(residuals)
+
+  // Predict next value
+  const nextX = points.length
+  const nextPredicted = intercept + slope * nextX
+
+  // 95% confidence interval = ±1.96 * standard error
+  const confidenceInterval = {
+    lower: nextPredicted - 1.96 * stdError,
+    upper: nextPredicted + 1.96 * stdError
+  }
+
+  return { slope, intercept, rSquared, confidenceInterval }
 }
 
 /**
- * Calculate moving averages
+ * Calculate moving averages using simple-statistics
  */
 function calculateMovingAverages(
   values: number[],
@@ -114,8 +142,8 @@ function calculateMovingAverages(
 
   for (const period of periods) {
     if (values.length >= period) {
-      const sum = values.slice(-period).reduce((a, b) => a + b, 0)
-      result[`ma${period}`] = sum / period
+      const slice = values.slice(-period)
+      result[`ma${period}`] = ss.mean(slice)
     }
   }
 
@@ -123,7 +151,7 @@ function calculateMovingAverages(
 }
 
 /**
- * Calculate volatility (standard deviation of returns)
+ * Calculate volatility using simple-statistics standard deviation
  * @returns {number} Volatility as percentage (e.g., 5.2 means 5.2% volatility)
  */
 function calculateVolatility(prices: number[]): number {
@@ -135,9 +163,9 @@ function calculateVolatility(prices: number[]): number {
     returns.push(ret)
   }
 
-  const mean = returns.reduce((a, b) => a + b) / returns.length
-  const variance = returns.reduce((sum, ret) => sum + (ret - mean) ** 2, 0) / returns.length
-  return Math.sqrt(variance) * 100 // Returns percentage (5.2 = 5.2% volatility)
+  // Use simple-statistics for standard deviation
+  const stdDev = ss.standardDeviation(returns)
+  return stdDev * 100 // Returns percentage (5.2 = 5.2% volatility)
 }
 
 /**
@@ -171,15 +199,9 @@ function detectSupportResistance(prices: number[]): {
     }
   }
 
-  const supportLevel =
-    localMins.length > 0
-      ? localMins.reduce((a, b) => a + b) / localMins.length
-      : Math.min(...recentPrices)
+  const supportLevel = localMins.length > 0 ? ss.mean(localMins) : Math.min(...recentPrices)
 
-  const resistanceLevel =
-    localMaxs.length > 0
-      ? localMaxs.reduce((a, b) => a + b) / localMaxs.length
-      : Math.max(...recentPrices)
+  const resistanceLevel = localMaxs.length > 0 ? ss.mean(localMaxs) : Math.max(...recentPrices)
 
   return {
     supportLevel,
@@ -188,13 +210,120 @@ function detectSupportResistance(prices: number[]): {
 }
 
 /**
- * Predict future price movement using linear regression with proper time-based extrapolation
+ * Calculate Bollinger Bands (price ± 2σ)
+ */
+export function calculateBollingerBands(
+  prices: number[],
+  period = 20,
+  stdDevMultiplier = 2
+): BollingerBands {
+  const upper: number[] = []
+  const middle: number[] = []
+  const lower: number[] = []
+
+  for (let i = period - 1; i < prices.length; i++) {
+    const slice = prices.slice(i - period + 1, i + 1)
+    const mean = ss.mean(slice)
+    const stdDev = ss.standardDeviation(slice)
+
+    middle.push(mean)
+    upper.push(mean + stdDevMultiplier * stdDev)
+    lower.push(mean - stdDevMultiplier * stdDev)
+  }
+
+  return { upper, middle, lower }
+}
+
+/**
+ * Calculate RSI (Relative Strength Index)
+ * RSI = 100 - (100 / (1 + RS))
+ * where RS = Average Gain / Average Loss over period
+ */
+export function calculateRSI(prices: number[], period = 14): number {
+  if (prices.length < period + 1) return 50 // neutral
+
+  const changes: number[] = []
+  for (let i = 1; i < prices.length; i++) {
+    changes.push(prices[i] - prices[i - 1])
+  }
+
+  const recentChanges = changes.slice(-period)
+  const gains = recentChanges.filter(c => c > 0)
+  const losses = recentChanges.filter(c => c < 0).map(c => Math.abs(c))
+
+  const avgGain = gains.length > 0 ? ss.mean(gains) : 0
+  const avgLoss = losses.length > 0 ? ss.mean(losses) : 0
+
+  // Handle edge cases
+  if (avgLoss === 0 && avgGain === 0) return 50 // no movement
+  if (avgLoss === 0) return 100 // all gains
+
+  const rs = avgGain / avgLoss
+  const rsi = 100 - 100 / (1 + rs)
+
+  return rsi
+}
+
+/**
+ * Calculate MACD (Moving Average Convergence Divergence)
+ */
+export function calculateMACD(prices: number[]): {
+  macd: number
+  signal: number
+  histogram: number
+} | null {
+  if (prices.length < 26) return null
+
+  // Calculate EMAs
+  const ema12 = calculateEMA(prices, 12)
+  const ema26 = calculateEMA(prices, 26)
+
+  if (ema12.length === 0 || ema26.length === 0) return null
+
+  // MACD line = EMA12 - EMA26
+  const macdLine = ema12[ema12.length - 1] - ema26[ema26.length - 1]
+
+  // Signal line = 9-period EMA of MACD
+  // Simplified: use last 9 MACD values mean
+  const macdValues = ema12.slice(-9).map((v, i) => v - ema26[ema26.length - 9 + i])
+  const signal = ss.mean(macdValues)
+
+  // Histogram = MACD - Signal
+  const histogram = macdLine - signal
+
+  return { macd: macdLine, signal, histogram }
+}
+
+/**
+ * Calculate Exponential Moving Average (EMA)
+ */
+function calculateEMA(prices: number[], period: number): number[] {
+  if (prices.length < period) return []
+
+  const k = 2 / (period + 1)
+  const emaValues: number[] = []
+
+  // Start with SMA for first EMA value
+  const firstSMA = ss.mean(prices.slice(0, period))
+  emaValues.push(firstSMA)
+
+  // Calculate EMA for remaining values
+  for (let i = period; i < prices.length; i++) {
+    const ema = prices[i] * k + emaValues[emaValues.length - 1] * (1 - k)
+    emaValues.push(ema)
+  }
+
+  return emaValues
+}
+
+/**
+ * Predict future price movement using linear regression with confidence intervals
  */
 export function predictTrend(
   priceHistory: TrendPoint[],
   timeframe: '1h' | '24h' | '7d' = '24h'
 ): TrendPrediction {
-  const { slope, intercept, rSquared } = linearRegression(priceHistory)
+  const { slope, intercept, rSquared, confidenceInterval } = linearRegression(priceHistory)
 
   const currentValue = priceHistory[priceHistory.length - 1].value
 
@@ -234,12 +363,13 @@ export function predictTrend(
     trendStrength,
     supportLevel,
     resistanceLevel,
-    timeframe
+    timeframe,
+    confidenceInterval: confidenceInterval || undefined
   }
 }
 
 /**
- * Correlate market sentiment with price movements
+ * Correlate market sentiment with price movements using Pearson correlation
  */
 export function analyzeSentimentCorrelation(
   priceHistory: TrendPoint[],
@@ -264,27 +394,17 @@ export function analyzeSentimentCorrelation(
 
   const alignedSentiments = sentimentScores.slice(0, returns.length)
 
-  // Calculate Pearson correlation
-  const meanReturns = returns.reduce((a, b) => a + b) / returns.length
-  const meanSentiment = alignedSentiments.reduce((a, b) => a + b) / alignedSentiments.length
-
-  let numerator = 0
-  let denomX = 0
-  let denomY = 0
-
-  for (let i = 0; i < returns.length; i++) {
-    const dx = returns[i] - meanReturns
-    const dy = alignedSentiments[i] - meanSentiment
-    numerator += dx * dy
-    denomX += dx * dx
-    denomY += dy * dy
+  // Use simple-statistics for Pearson correlation
+  let correlation = 0
+  try {
+    correlation = ss.sampleCorrelation(returns, alignedSentiments)
+    // Handle NaN case (can happen if all values are identical)
+    if (isNaN(correlation)) correlation = 0
+  } catch (e) {
+    correlation = 0
   }
 
-  // Fix: Prevent division by zero in Pearson correlation
-  const denomProduct = denomX * denomY
-  const correlation = denomProduct > 0 ? numerator / Math.sqrt(denomProduct) : 0
-
-  const currentSentiment = alignedSentiments[alignedSentiments.length - 1]
+  const currentSentiment = alignedSentiments[alignedSentiments.length - 1] || 0
   const direction = correlation > 0.3 ? 'aligned' : correlation < -0.3 ? 'diverging' : 'aligned'
 
   // Determine correlation strength
@@ -357,12 +477,32 @@ export function analyzeMarket(
 
   const sentimentCorrelation = analyzeSentimentCorrelation(priceHistory, sentimentScores)
 
+  // Calculate technical indicators
+  const technicalIndicators: TechnicalIndicators = {}
+
+  // RSI (if we have enough data)
+  if (prices.length >= 15) {
+    technicalIndicators.rsi = calculateRSI(prices, 14)
+  }
+
+  // Bollinger Bands (if we have enough data)
+  if (prices.length >= 20) {
+    technicalIndicators.bollingerBands = calculateBollingerBands(prices, 20, 2)
+  }
+
+  // MACD (if we have enough data)
+  if (prices.length >= 26) {
+    const macd = calculateMACD(prices)
+    if (macd) technicalIndicators.macd = macd
+  }
+
   return {
     predictions,
     volatility,
     sentimentCorrelation,
     priceHistory: prices,
     movingAverages: movingAverages as any,
-    changeMetrics
+    changeMetrics,
+    technicalIndicators
   }
 }

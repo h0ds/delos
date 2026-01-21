@@ -5,8 +5,11 @@
  * - Confidence scoring (how reliable is each signal?)
  * - Signal aggregation and quality metrics
  * - Market impact prediction
+ *
+ * Uses simple-statistics for statistical calculations
  */
 
+import * as ss from 'simple-statistics'
 import type { Signal } from '../types.js'
 
 export interface EnhancedSignal extends Signal {
@@ -135,21 +138,18 @@ function predictMarketImpact(signal: Signal, aggregateSentiment: number): number
 }
 
 /**
- * Predict volatility from signal patterns
+ * Predict volatility from signal patterns using simple-statistics
  */
 function predictVolatility(signals: Signal[]): 'low' | 'medium' | 'high' {
   if (signals.length === 0) return 'low'
 
   // High volatility indicators:
-  // 1. High sentiment divergence (disagreement)
+  // 1. High sentiment divergence (disagreement) - use simple-statistics
   const sentiments = signals.map(s => s.sentiment)
-  const meanSentiment = sentiments.reduce((a, b) => a + b, 0) / sentiments.length
-  const variance =
-    sentiments.reduce((sum, s) => sum + (s - meanSentiment) ** 2, 0) / sentiments.length
-  const stdDev = Math.sqrt(variance)
+  const stdDev = ss.standardDeviation(sentiments)
 
   // 2. High average impact
-  const avgImpact = signals.reduce((sum, s) => sum + s.impact, 0) / signals.length
+  const avgImpact = ss.mean(signals.map(s => s.impact))
 
   // 3. Sentiment consensus weakness
   const strongOpinions = signals.filter(s => Math.abs(s.sentiment) > 0.5).length
@@ -166,7 +166,7 @@ function predictVolatility(signals: Signal[]): 'low' | 'medium' | 'high' {
 }
 
 /**
- * Detect sentiment trend from signal patterns
+ * Detect sentiment trend from signal patterns using simple-statistics
  */
 function detectSentimentTrend(signals: Signal[]): 'strengthening' | 'weakening' | 'stable' {
   if (signals.length < 2) return 'stable'
@@ -176,12 +176,12 @@ function detectSentimentTrend(signals: Signal[]): 'strengthening' | 'weakening' 
     (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
   )
 
-  // Compare recent vs older signals
+  // Compare recent vs older signals using simple-statistics mean
   const recent = sorted.slice(0, Math.ceil(sorted.length / 2))
   const older = sorted.slice(Math.ceil(sorted.length / 2))
 
-  const recentAvg = recent.reduce((sum, s) => sum + s.sentiment, 0) / recent.length
-  const olderAvg = older.reduce((sum, s) => sum + s.sentiment, 0) / older.length
+  const recentAvg = ss.mean(recent.map(s => s.sentiment))
+  const olderAvg = ss.mean(older.map(s => s.sentiment))
 
   const diff = recentAvg - olderAvg
   if (diff > 0.2) return 'strengthening'
@@ -287,19 +287,17 @@ function extractOpportunityIndicators(signals: Signal[]): string[] {
  * Enhance signals with confidence and sentiment trend analysis
  */
 export function enhanceSignals(signals: Signal[]): EnhancedSignal[] {
-  // Fix: Proper empty array handling
-  const aggregateSentiment =
-    signals.length > 0 ? signals.reduce((sum, s) => sum + s.sentiment, 0) / signals.length : 0
+  // Fix: Proper empty array handling with simple-statistics
+  const aggregateSentiment = signals.length > 0 ? ss.mean(signals.map(s => s.sentiment)) : 0
 
   // Calculate these once outside the loop for O(n) instead of O(n²)
-  const globalSentimentTrend = signals.length > 0 ? detectSentimentTrend(signals) : 'neutral'
+  const globalSentimentTrend = signals.length > 0 ? detectSentimentTrend(signals) : 'stable'
   const globalVolatility = signals.length > 0 ? predictVolatility(signals) : 'low'
 
   return signals.map((signal, idx) => ({
     ...signal,
     confidence: calculateConfidence(signal, idx, signals.length),
     trustScore: calculateTrustScore(signal),
-    // sentimentTrend removed - doesn't make sense for individual signals
     marketImpact: predictMarketImpact(signal, aggregateSentiment),
     volatilityPrediction: globalVolatility, // Use cached value
     ageHours: getSignalAgeHours(signal)
@@ -316,7 +314,7 @@ function getSignalAgeHours(signal: Signal): number {
 }
 
 /**
- * Analyze aggregate signal patterns
+ * Analyze aggregate signal patterns using simple-statistics
  */
 export function analyzeSignalPatterns(signals: Signal[]): SignalAnalytics {
   if (signals.length === 0) {
@@ -336,7 +334,7 @@ export function analyzeSignalPatterns(signals: Signal[]): SignalAnalytics {
   }
 
   const sentiments = signals.map(s => s.sentiment)
-  const aggregateSentiment = sentiments.reduce((a, b) => a + b) / sentiments.length
+  const aggregateSentiment = ss.mean(sentiments)
 
   // Sentiment consensus: how many signals align?
   const alignedCount = sentiments.filter(s => Math.sign(s) === Math.sign(aggregateSentiment)).length
@@ -367,7 +365,7 @@ export function analyzeSignalPatterns(signals: Signal[]): SignalAnalytics {
 
   // Confidence & source analysis
   const enhanced = enhanceSignals(signals)
-  const avgConfidence = enhanced.reduce((sum, s) => sum + s.confidence, 0) / enhanced.length
+  const avgConfidence = ss.mean(enhanced.map(s => s.confidence))
 
   const categories = signals.reduce(
     (acc, s) => {
