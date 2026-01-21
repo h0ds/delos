@@ -1,6 +1,12 @@
 import { Server } from 'socket.io'
 import { getFeaturedMarkets as getPolymarketFeatured } from './polymarketService.js'
 import { getFeaturedMarkets as getKalshiFeatured } from './kalshiService.js'
+import {
+  fetchOHLCCandles,
+  getCachedCandles,
+  cacheCandles,
+  OHLCCandle
+} from './priceHistoryService.js'
 
 interface MarketUpdatePayload {
   source: 'polymarket' | 'kalshi'
@@ -12,13 +18,25 @@ interface MarketUpdatePayload {
   timestamp: number
   priceChangePercent?: number // For tracking momentum
   priceChangeDirection?: 'up' | 'down' | 'stable'
+  ohlcCandles?: OHLCCandle[] // Real historical OHLC data
+}
+
+export interface MarketData {
+  market: string
+  question: string
+  outcomes: Array<{ name: string; probability: number }>
+  volume24h: number
+  liquidity?: number
+  clobTokenIds?: string[] // For fetching real price history
 }
 
 export class MarketBroadcaster {
   private io: Server
   private broadcastInterval: NodeJS.Timeout | null = null
   private lastMarketPrices: Map<string, number[]> = new Map()
+  private marketOHLCData: Map<string, OHLCCandle[]> = new Map() // Store real OHLC data
   private static readonly BROADCAST_INTERVAL = 5000 // 5 seconds
+  private static readonly OHLC_FETCH_INTERVAL = 3600000 // Fetch OHLC every 1 hour
 
   constructor(io: Server) {
     this.io = io
@@ -57,6 +75,56 @@ export class MarketBroadcaster {
   }
 
   /**
+   * Fetch and cache real OHLC data for a market
+   * This runs periodically to get fresh historical data
+   */
+  private async fetchOHLCForMarket(
+    market: MarketData,
+    source: 'polymarket' | 'kalshi'
+  ): Promise<OHLCCandle[] | null> {
+    try {
+      // Only fetch OHLC for Polymarket (Kalshi API not accessible)
+      if (source !== 'polymarket') return null
+
+      const tokenIds = market.clobTokenIds || []
+      if (tokenIds.length === 0) {
+        console.log(`[broadcaster] No CLOB token IDs for market ${market.market}`)
+        return null
+      }
+
+      const tokenId = tokenIds[0] // Get primary outcome
+      const marketId = `${source}:${market.market}`
+
+      // Try cache first
+      const cached = getCachedCandles(tokenId)
+      if (cached) {
+        this.marketOHLCData.set(marketId, cached)
+        return cached
+      }
+
+      // Fetch real OHLC from Polymarket
+      console.log(`[broadcaster] Fetching OHLC for ${marketId} (token: ${tokenId})`)
+      const candles = await fetchOHLCCandles(tokenId, '1d', 60) // 1d interval, 60-min candles
+
+      if (candles.length > 0) {
+        cacheCandles(tokenId, candles)
+        this.marketOHLCData.set(marketId, candles)
+        console.log(`[broadcaster] Cached ${candles.length} candles for ${marketId}`)
+        return candles
+      } else {
+        console.warn(`[broadcaster] No OHLC data received for ${tokenId}`)
+      }
+    } catch (error) {
+      console.error(
+        `[broadcaster] Error fetching OHLC:`,
+        error instanceof Error ? error.message : error
+      )
+    }
+
+    return null
+  }
+
+  /**
    * Fetch latest market data and broadcast to all clients
    */
   private async broadcastMarketUpdates(): Promise<void> {
@@ -68,9 +136,12 @@ export class MarketBroadcaster {
 
       const updates: MarketUpdatePayload[] = []
 
-      // Process Polymarket updates
+      // Process Polymarket updates (fetch OHLC if available)
       for (const market of polymarkets.slice(0, 4)) {
-        const update = this.createMarketUpdate(market, 'polymarket')
+        // Try to fetch real OHLC data
+        const ohlcCandles = await this.fetchOHLCForMarket(market, 'polymarket')
+
+        const update = this.createMarketUpdate(market, 'polymarket', ohlcCandles || undefined)
         if (update) updates.push(update)
       }
 
@@ -91,11 +162,12 @@ export class MarketBroadcaster {
   }
 
   /**
-   * Create market update payload with price change tracking
+   * Create market update payload with price change tracking and OHLC data
    */
   private createMarketUpdate(
-    market: any,
-    source: 'polymarket' | 'kalshi'
+    market: MarketData,
+    source: 'polymarket' | 'kalshi',
+    ohlcCandles?: OHLCCandle[]
   ): MarketUpdatePayload | null {
     try {
       const marketId = `${source}:${market.market}`
@@ -119,7 +191,7 @@ export class MarketBroadcaster {
       if (priceHistory.length > 20) priceHistory.shift()
       this.lastMarketPrices.set(marketId, priceHistory)
 
-      return {
+      const payload: MarketUpdatePayload = {
         source,
         marketId: market.market,
         question: market.question,
@@ -130,6 +202,16 @@ export class MarketBroadcaster {
         priceChangePercent: parseFloat(priceChangePercent.toFixed(2)),
         priceChangeDirection
       }
+
+      // Include real OHLC data if available
+      if (ohlcCandles && ohlcCandles.length > 0) {
+        payload.ohlcCandles = ohlcCandles
+        console.log(
+          `[broadcaster] Included ${ohlcCandles.length} real candles in update for ${marketId}`
+        )
+      }
+
+      return payload
     } catch (error) {
       console.error(
         `[broadcaster] error processing market: ${error instanceof Error ? error.message : error}`
@@ -150,5 +232,19 @@ export class MarketBroadcaster {
    */
   public clearHistory(): void {
     this.lastMarketPrices.clear()
+  }
+
+  /**
+   * Get OHLC candles for a specific market
+   */
+  public getOHLCCandles(marketId: string): OHLCCandle[] | null {
+    return this.marketOHLCData.get(marketId) || null
+  }
+
+  /**
+   * Get all cached market OHLC data
+   */
+  public getAllOHLCData(): Map<string, OHLCCandle[]> {
+    return new Map(this.marketOHLCData)
   }
 }

@@ -26,6 +26,14 @@ export interface MarketUpdate {
   timestamp: number
   priceChangePercent?: number
   priceChangeDirection?: 'up' | 'down' | 'stable'
+  ohlcCandles?: Array<{
+    timestamp: number
+    open: number
+    high: number
+    low: number
+    close: number
+    volume?: number
+  }> // Real OHLC data from Polymarket API
 }
 
 export interface ServerToClientEvents {

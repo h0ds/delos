@@ -22,12 +22,14 @@ import {
  * Data-dense trend analysis visualization (no unnecessary borders/padding)
  * @param {Object} props
  * @param {Array} props.priceHistory - Array of TrendPoint objects
+ * @param {Array} props.ohlcCandles - Real OHLC candles from Polymarket API (preferred)
  * @param {Object} props.analytics - MarketAnalytics object
  * @param {String} props.marketName - Optional market name for display
  * @param {String} props.source - Market source ('polymarket' or 'kalshi')
  */
 export function TrendAnalysisChart({
   priceHistory,
+  ohlcCandles,
   analytics,
   marketName = 'Market',
   source = 'polymarket'
@@ -51,15 +53,33 @@ export function TrendAnalysisChart({
   const prediction24h = analytics.predictions[1]
   const sentiment = analytics.sentimentCorrelation || {}
 
-  // Generate OHLC data from price history for candlestick
-  const candleData = priceHistory.slice(-8).map((point, idx) => ({
-    open: point.value * (0.98 + Math.random() * 0.04),
-    high: point.value * (1.01 + Math.random() * 0.04),
-    low: point.value * (0.95 + Math.random() * 0.03),
-    close: point.value,
-    volume: 1000000 + Math.random() * 2000000,
-    time: idx
-  }))
+  // Use real OHLC candles from API if available, otherwise fall back to price history
+  let candleData
+  if (ohlcCandles && ohlcCandles.length > 0) {
+    console.log(`[TrendAnalysis] Using real ${ohlcCandles.length} OHLC candles from Polymarket API`)
+    // Convert real candles to display format
+    candleData = ohlcCandles.slice(-8).map((candle, idx) => ({
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+      volume: candle.volume || 0,
+      time: idx,
+      isReal: true // Mark as real data
+    }))
+  } else {
+    console.warn('[TrendAnalysis] No real OHLC candles available, using price history as fallback')
+    // Fallback: Generate from price history (less accurate but works)
+    candleData = priceHistory.slice(-8).map((point, idx) => ({
+      open: point.value * (0.98 + Math.random() * 0.04),
+      high: point.value * (1.01 + Math.random() * 0.04),
+      low: point.value * (0.95 + Math.random() * 0.03),
+      close: point.value,
+      volume: 1000000 + Math.random() * 2000000,
+      time: idx,
+      isReal: false // Mark as generated data
+    }))
+  }
 
   // Safe sentiment access with fallbacks
   const sentimentScore = typeof sentiment.sentimentScore === 'number' ? sentiment.sentimentScore : 0

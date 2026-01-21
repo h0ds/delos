@@ -257,8 +257,10 @@ export default function MarketDetailPage({
                         sentiment: 0
                       })) || []
                     }
+                    ohlcCandles={market.ohlcCandles} // Pass real OHLC data if available
                     analytics={analytics}
                     marketName={market.question}
+                    source={market.source || 'polymarket'}
                   />
                 </div>
               </div>
