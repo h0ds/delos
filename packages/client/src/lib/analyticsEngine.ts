@@ -97,7 +97,8 @@ function linearRegression(points: TrendPoint[]): {
     ssResidual += (actual - predicted) * (actual - predicted)
   }
 
-  const rSquared = 1 - ssResidual / ssTotal
+  // Fix: Handle zero ssTotal (flat price line) and ensure R² is in [0, 1]
+  const rSquared = ssTotal > 0 ? Math.max(0, Math.min(1, 1 - ssResidual / ssTotal)) : 0
 
   return { slope, intercept, rSquared }
 }
@@ -123,6 +124,7 @@ function calculateMovingAverages(
 
 /**
  * Calculate volatility (standard deviation of returns)
+ * @returns {number} Volatility as percentage (e.g., 5.2 means 5.2% volatility)
  */
 function calculateVolatility(prices: number[]): number {
   if (prices.length < 2) return 0
@@ -135,7 +137,7 @@ function calculateVolatility(prices: number[]): number {
 
   const mean = returns.reduce((a, b) => a + b) / returns.length
   const variance = returns.reduce((sum, ret) => sum + (ret - mean) ** 2, 0) / returns.length
-  return Math.sqrt(variance) * 100 // Convert to percentage
+  return Math.sqrt(variance) * 100 // Returns percentage (5.2 = 5.2% volatility)
 }
 
 /**
@@ -155,31 +157,38 @@ function detectSupportResistance(prices: number[]): {
 
   // Find local minima (support) and maxima (resistance) in last 20 points
   const recentPrices = prices.slice(-20)
-  let supportLevel = Math.min(...recentPrices)
-  let resistanceLevel = Math.max(...recentPrices)
 
-  // Weight recent prices more heavily
-  const weights = recentPrices.map((_, i) => (i + 1) / recentPrices.length)
-  const weightedLow =
-    recentPrices.reduce((sum, price, i) => {
-      if (price === supportLevel) return sum + price * weights[i]
-      return sum
-    }, 0) / weights.reduce((a, b) => a + b)
+  // Find actual local minima and maxima
+  const localMins: number[] = []
+  const localMaxs: number[] = []
 
-  const weightedHigh =
-    recentPrices.reduce((sum, price, i) => {
-      if (price === resistanceLevel) return sum + price * weights[i]
-      return sum
-    }, 0) / weights.reduce((a, b) => a + b)
+  for (let i = 1; i < recentPrices.length - 1; i++) {
+    if (recentPrices[i] < recentPrices[i - 1] && recentPrices[i] < recentPrices[i + 1]) {
+      localMins.push(recentPrices[i])
+    }
+    if (recentPrices[i] > recentPrices[i - 1] && recentPrices[i] > recentPrices[i + 1]) {
+      localMaxs.push(recentPrices[i])
+    }
+  }
+
+  const supportLevel =
+    localMins.length > 0
+      ? localMins.reduce((a, b) => a + b) / localMins.length
+      : Math.min(...recentPrices)
+
+  const resistanceLevel =
+    localMaxs.length > 0
+      ? localMaxs.reduce((a, b) => a + b) / localMaxs.length
+      : Math.max(...recentPrices)
 
   return {
-    supportLevel: weightedLow || supportLevel,
-    resistanceLevel: weightedHigh || resistanceLevel
+    supportLevel,
+    resistanceLevel
   }
 }
 
 /**
- * Predict future price movement
+ * Predict future price movement using linear regression with proper time-based extrapolation
  */
 export function predictTrend(
   priceHistory: TrendPoint[],
@@ -188,16 +197,26 @@ export function predictTrend(
   const { slope, intercept, rSquared } = linearRegression(priceHistory)
 
   const currentValue = priceHistory[priceHistory.length - 1].value
-  const lookAhead = timeframe === '1h' ? 12 : timeframe === '24h' ? 24 : 168 // hours ahead
-  const predictedValue = intercept + slope * (priceHistory.length - 1 + lookAhead)
+
+  // Calculate actual time step from data (instead of assuming 1 hour)
+  const firstTime = priceHistory[0].timestamp
+  const lastTime = priceHistory[priceHistory.length - 1].timestamp
+  const avgTimeStep = (lastTime - firstTime) / (priceHistory.length - 1)
+
+  // Convert timeframe to milliseconds
+  const lookAheadMs = timeframe === '1h' ? 3600000 : timeframe === '24h' ? 86400000 : 604800000
+  const futureSteps = avgTimeStep > 0 ? lookAheadMs / avgTimeStep : 0
+
+  const predictedValue = intercept + slope * (priceHistory.length - 1 + futureSteps)
 
   const changePercent = ((predictedValue - currentValue) / currentValue) * 100
   const direction: 'up' | 'down' | 'stable' =
     Math.abs(changePercent) < 1 ? 'stable' : changePercent > 0 ? 'up' : 'down'
 
-  // Confidence based on trend strength (R²) and changePercent magnitude
-  let confidence = Math.min(100, Math.abs(changePercent) * 2 + rSquared * 30)
-  confidence = Math.max(40, confidence) // Minimum 40% confidence
+  // Improved confidence calculation based on R² and volatility penalty
+  const volatilityPenalty = Math.min(30, Math.abs(changePercent) / 10)
+  let confidence = Math.max(0, rSquared * 100 - volatilityPenalty)
+  confidence = Math.max(20, Math.min(95, confidence)) // Realistic bounds [20%, 95%]
 
   const trendStrength: 'strong' | 'moderate' | 'weak' =
     rSquared > 0.7 ? 'strong' : rSquared > 0.4 ? 'moderate' : 'weak'
@@ -261,7 +280,10 @@ export function analyzeSentimentCorrelation(
     denomY += dy * dy
   }
 
-  const correlation = numerator / Math.sqrt(denomX * denomY)
+  // Fix: Prevent division by zero in Pearson correlation
+  const denomProduct = denomX * denomY
+  const correlation = denomProduct > 0 ? numerator / Math.sqrt(denomProduct) : 0
+
   const currentSentiment = alignedSentiments[alignedSentiments.length - 1]
   const direction = correlation > 0.3 ? 'aligned' : correlation < -0.3 ? 'diverging' : 'aligned'
 
@@ -289,6 +311,24 @@ export function analyzeMarket(
   priceHistory: TrendPoint[],
   sentimentScores: number[] = []
 ): MarketAnalytics {
+  // Guard: Require at least 2 data points for meaningful analysis
+  if (!priceHistory || priceHistory.length < 2) {
+    return {
+      predictions: [],
+      volatility: 0,
+      sentimentCorrelation: {
+        sentimentScore: 0,
+        priceCorrelation: 0,
+        strength: 'weak',
+        direction: 'aligned',
+        predictiveValue: 0
+      },
+      priceHistory: [],
+      movingAverages: { ma7: 0, ma14: 0, ma30: 0 },
+      changeMetrics: { change1h: 0, change24h: 0, change7d: 0 }
+    }
+  }
+
   const prices = priceHistory.map(p => p.value)
 
   // Calculate all metrics

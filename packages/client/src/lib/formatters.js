@@ -46,20 +46,17 @@ export function formatLargeNumber(value) {
 }
 
 /**
- * Format a percentage with smart decimals
- * @param {number} value - The percentage value (0-100 or decimal like 0.75)
+ * Format a percentage value (expects 0-100 scale)
+ * @param {number} value - The percentage value (0-100 scale, e.g., 75 = 75%)
  * @param {number} maxDecimals - Maximum decimal places (default 1)
  * @returns {string} Formatted like "+12.5%" or "-3.2%"
  */
 export function formatPercent(value, maxDecimals = 1) {
   if (value === null || value === undefined || isNaN(value)) return '—'
 
-  // Normalize if passed as decimal (0-1) instead of 0-100
-  const numValue = value > 100 ? value : value * 100
-
   // Remove trailing zeros, format with sign
-  const formatted = Number(numValue.toFixed(maxDecimals)).toString()
-  const sign = numValue > 0 ? '+' : numValue === 0 ? '' : ''
+  const formatted = Number(value.toFixed(maxDecimals)).toString()
+  const sign = value > 0 ? '+' : value === 0 ? '' : ''
 
   return `${sign}${formatted}%`
 }
@@ -121,12 +118,16 @@ export function formatCorrelation(value) {
 }
 
 /**
- * Format a volatility percentage (0-100)
- * @param {number} value - Volatility percentage
+ * Format a volatility percentage (expects 0-100 scale)
+ * @param {number} value - Volatility percentage (0-100, e.g., 35.2 = 35.2%)
  * @returns {string} Formatted like "35.2%" or "2.1%"
  */
 export function formatVolatility(value) {
-  return formatPercent(value, 1)
+  if (value === null || value === undefined || isNaN(value)) return '—'
+
+  // Don't use formatPercent since volatility doesn't need + sign
+  const formatted = Number(value.toFixed(1)).toString()
+  return `${formatted}%`
 }
 
 /**

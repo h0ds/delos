@@ -63,8 +63,7 @@ function calculateConfidence(signal: Signal, index: number, totalSignals: number
   confidence += Math.min(signal.impact * 15, 15)
 
   // Recency bonus (more recent signals more relevant)
-  const ageMs = Date.now() - (new Date(signal.date || Date.now()).getTime() || 0)
-  const ageHours = ageMs / (1000 * 60 * 60)
+  const ageHours = getSignalAgeHours(signal)
   if (ageHours < 1) confidence += 10
   else if (ageHours < 6) confidence += 5
   else if (ageHours > 24) confidence -= 10
@@ -109,8 +108,7 @@ function calculateTrustScore(signal: Signal): number {
   }
 
   // Recency penalty
-  const ageHours =
-    (Date.now() - (new Date(signal.date || Date.now()).getTime() || 0)) / (1000 * 60 * 60)
+  const ageHours = getSignalAgeHours(signal)
   if (ageHours > 72) trust *= 0.7
   else if (ageHours > 48) trust *= 0.85
   else if (ageHours > 24) trust *= 0.95
@@ -122,18 +120,18 @@ function calculateTrustScore(signal: Signal): number {
  * Predict market impact based on signal characteristics
  */
 function predictMarketImpact(signal: Signal, aggregateSentiment: number): number {
-  let impact = signal.impact * 50 // Use signal's built-in impact (0-1 → 0-50)
+  // Base impact from signal's intrinsic importance (0-60)
+  let impact = signal.impact * 60
 
-  // Sentiment extremity increases impact
+  // Sentiment extremity increases impact (0-20)
   const sentimentAbs = Math.abs(signal.sentiment)
-  impact += sentimentAbs * 30 // Additional 0-30 from sentiment
+  impact += sentimentAbs * 20
 
-  // Alignment with aggregate sentiment increases impact
-  const alignment = Math.abs(signal.sentiment - aggregateSentiment)
-  if (alignment < 0.3) impact += 15 // Strong agreement = more impact
-  if (alignment > 0.7) impact += 10 // Divergence = also impactful (contrarian)
+  // Consensus amplifies impact (contrarian signals are often noise) (0-20)
+  const alignment = 1 - Math.abs(signal.sentiment - aggregateSentiment)
+  impact += alignment * 20
 
-  return Math.round(Math.min(100, impact))
+  return Math.round(Math.min(100, Math.max(0, impact)))
 }
 
 /**
@@ -289,19 +287,32 @@ function extractOpportunityIndicators(signals: Signal[]): string[] {
  * Enhance signals with confidence and sentiment trend analysis
  */
 export function enhanceSignals(signals: Signal[]): EnhancedSignal[] {
-  const aggregateSentiment = signals.reduce((sum, s) => sum + s.sentiment, 0) / signals.length || 0
+  // Fix: Proper empty array handling
+  const aggregateSentiment =
+    signals.length > 0 ? signals.reduce((sum, s) => sum + s.sentiment, 0) / signals.length : 0
+
+  // Calculate these once outside the loop for O(n) instead of O(n²)
+  const globalSentimentTrend = signals.length > 0 ? detectSentimentTrend(signals) : 'neutral'
+  const globalVolatility = signals.length > 0 ? predictVolatility(signals) : 'low'
 
   return signals.map((signal, idx) => ({
     ...signal,
     confidence: calculateConfidence(signal, idx, signals.length),
     trustScore: calculateTrustScore(signal),
-    sentimentTrend: signal.category === 'news' ? detectSentimentTrend(signals) : undefined,
+    // sentimentTrend removed - doesn't make sense for individual signals
     marketImpact: predictMarketImpact(signal, aggregateSentiment),
-    volatilityPrediction: predictVolatility(signals),
-    ageHours: Math.round(
-      (Date.now() - (new Date(signal.date || Date.now()).getTime() || 0)) / (1000 * 60 * 60)
-    )
+    volatilityPrediction: globalVolatility, // Use cached value
+    ageHours: getSignalAgeHours(signal)
   }))
+}
+
+/**
+ * Get signal age in hours (utility function)
+ */
+function getSignalAgeHours(signal: Signal): number {
+  const signalDate = signal.date ? new Date(signal.date) : new Date()
+  const ageMs = Date.now() - signalDate.getTime()
+  return Math.max(0, Math.round(ageMs / (1000 * 60 * 60)))
 }
 
 /**

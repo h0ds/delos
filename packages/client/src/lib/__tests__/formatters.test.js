@@ -57,9 +57,10 @@ describe('formatters', () => {
   })
 
   describe('formatPercent', () => {
-    it('should format decimal percentages', () => {
-      expect(formatPercent(0.125, 1)).toBe('+12.5%')
-      expect(formatPercent(-0.032, 1)).toBe('-3.2%')
+    it('should format percentages (0-100 scale)', () => {
+      expect(formatPercent(12.5, 1)).toBe('+12.5%')
+      expect(formatPercent(-3.2, 1)).toBe('-3.2%')
+      expect(formatPercent(75.23, 1)).toBe('+75.2%')
     })
 
     it('should handle null/undefined values', () => {
@@ -132,8 +133,10 @@ describe('formatters', () => {
   })
 
   describe('formatVolatility', () => {
-    it('should format volatility as percentage', () => {
-      expect(formatVolatility(0.352)).toBe('+35.2%')
+    it('should format volatility as percentage (0-100 scale)', () => {
+      expect(formatVolatility(35.2)).toBe('35.2%')
+      expect(formatVolatility(5.7)).toBe('5.7%')
+      expect(formatVolatility(0.5)).toBe('0.5%')
     })
 
     it('should handle null values', () => {
