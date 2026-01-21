@@ -1,5 +1,6 @@
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react'
 import { CandlestickChart } from './CandlestickChart'
+import { Tooltip } from '@/components/ui/tooltip'
 import {
   BadgeUnified,
   BADGE_TYPES,
@@ -230,24 +231,32 @@ export function TrendAnalysisChart({
 
       {/* Sentiment Metrics - 3 compact columns */}
       <div className="grid grid-cols-3 gap-2 text-xs">
-        <MetricCell
-          label="Sentiment"
-          value={() => validateNumber(sentimentScore, 2)}
-          badge={<BadgeUnified type={sentimentBadgeType} label="" showIcon />}
-          highlight
-        />
+        <Tooltip text="Overall sentiment score from market signals: -1 (bearish) to +1 (bullish)">
+          <MetricCell
+            label="Sentiment"
+            value={() => validateNumber(sentimentScore, 2)}
+            badge={<BadgeUnified type={sentimentBadgeType} label="" showIcon />}
+            highlight
+          />
+        </Tooltip>
         {validateNumber(priceCorrelation, 3) !== null && (
-          <MetricCell label="Correlation" value={() => validateNumber(priceCorrelation, 3)} />
+          <Tooltip text="Price movement correlated with sentiment: 0 (no correlation) to 1 (perfect)">
+            <MetricCell label="Correlation" value={() => validateNumber(priceCorrelation, 3)} />
+          </Tooltip>
         )}
         {validatePercent(predictiveValue, 0) !== null && (
-          <MetricCell label="Predictive" value={() => validatePercent(predictiveValue, 0)} />
+          <Tooltip text="Confidence that sentiment correctly predicts price direction: 0-100%">
+            <MetricCell label="Predictive" value={() => validatePercent(predictiveValue, 0)} />
+          </Tooltip>
         )}
       </div>
 
       {/* Volatility - Compact inline */}
       <div className={`rounded-lg p-3 ${sourceStyle.bg}`}>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-sm font-semibold">Volatility</p>
+          <Tooltip text="Expected price fluctuation: higher % = more volatile market">
+            <p className="text-sm font-semibold cursor-help">Volatility</p>
+          </Tooltip>
           <BadgeUnified type={volatilityBadgeType} label="" showIcon />
         </div>
         <div className="w-full h-1.5 bg-border/30 rounded-full overflow-hidden">

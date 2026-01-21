@@ -43,12 +43,12 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
   return (
     <div
       onClick={() => onSelectMarket && onSelectMarket(liveMarket)}
-      className={`group relative rounded-xl overflow-hidden bg-card border border-border/60 hover:border-primary/50 transition-all duration-300 hover:shadow-md hover:shadow-primary/15 cursor-pointer ${
+      className={`group relative rounded-xl overflow-hidden bg-card border border-border/60 hover:border-primary/50 transition-colors duration-300 hover:shadow-md hover:shadow-primary/15 cursor-pointer ${
         priceFlash ? 'animate-pulse' : ''
       }`}
     >
       {/* Hover Background Enhancement */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
       {/* Live Price Alert Badge */}
       {update?.priceChangePercent && Math.abs(update.priceChangePercent) > 0 && (
@@ -151,7 +151,12 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
 
         {/* Status Badge + Research Button */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Market Source Badge - Kalshi */}
+            <span className="text-xs font-mono px-2.5 py-1.5 rounded-squircle bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15 transition-all">
+              Kalshi
+            </span>
+
             {liveMarket.status && (
               <span
                 className={`text-xs font-mono px-2.5 py-1.5 rounded-squircle transition-all ${

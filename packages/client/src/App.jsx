@@ -390,7 +390,7 @@ function App() {
                         <div className="flex items-center gap-2 px-1">
                           <Badge variant="outline">Polymarket</Badge>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {initialMarkets.length === 0 ? (
                             // Show skeleton loaders while loading
                             <>
@@ -430,7 +430,7 @@ function App() {
                       {/* Kalshi Section */}
                       <div className="space-y-3">
                         <Badge variant="outline">Kalshi</Badge>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {initialMarkets.length === 0 ? (
                             // Show skeleton loaders while loading
                             <>

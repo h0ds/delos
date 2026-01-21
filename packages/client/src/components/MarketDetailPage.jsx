@@ -98,8 +98,7 @@ export default function MarketDetailPage({
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
-              <MarketIcon size={20} className="text-primary" />
-              <div className="text-xs font-mono text-muted-foreground">{marketSource}</div>
+              <div className="text-xs font-mono text-muted-foreground">Back</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -111,7 +110,6 @@ export default function MarketDetailPage({
                 className="text-xs font-mono gap-1.5 h-8 px-2"
                 title="Quick research"
               >
-                <Zap className="h-3 w-3" />
                 Research
               </Button>
             )}
@@ -123,7 +121,6 @@ export default function MarketDetailPage({
                 className="text-xs font-mono gap-1.5 h-8 px-2"
                 title="Compare with another market"
               >
-                <Users className="h-3 w-3" />
                 Compare
               </Button>
             )}
@@ -132,7 +129,11 @@ export default function MarketDetailPage({
                 href={`https://${isPolymarket ? 'polymarket' : 'kalshi'}.com/markets/${market.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+                className={`inline-flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-squircle transition-all border ${
+                  isPolymarket
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/15 hover:border-blue-500/30'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30'
+                }`}
                 title="View on market website"
               >
                 View on {marketSource}
@@ -160,6 +161,18 @@ export default function MarketDetailPage({
 
           {/* Status & Metadata Row */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Market Source Badge */}
+            <Badge
+              className={`text-xs font-mono px-3 py-1 ${
+                isPolymarket
+                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              }`}
+              variant="outline"
+            >
+              {marketSource}
+            </Badge>
+
             {market.status && (
               <Badge
                 className={`text-xs font-mono px-3 py-1 ${

@@ -19,7 +19,7 @@ export function OracleHeader({ connected, isResearching, onHeaderClick, currentP
             }`}
           >
             <div className="p-1.5">
-              <OracleVisualization size={24} />
+              <img src="../src/assets/delos.svg" alt="Delos Logo" className="w-8 h-8" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight font-mono">Delos</h1>
