@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -6,19 +6,32 @@ import { Badge } from '@/components/ui/badge'
 import { Search, Terminal, Activity, AlertCircle } from 'lucide-react'
 import { socket } from '@/lib/socket'
 import { generateMockSignals } from '@/lib/mockData'
+import { perfMonitor } from '@/lib/performanceMonitor'
 import { OracleHeader } from '@/components/OracleHeader'
 import { OracleVisualization } from '@/components/OracleVisualization'
 import { PolymarketCard } from '@/components/PolymarketCard'
 import { KalshiCard } from '@/components/KalshiCard'
 import { PolymarketIcon, KalshiIcon } from '@/components/MarketIcons'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
-import { MarketDetailPage } from '@/components/MarketDetailPage'
-import { MarketComparisonPage } from '@/components/MarketComparisonPage'
-import { MarketFilterPanel } from '@/components/MarketFilterPanel'
 import { SearchAutocomplete } from '@/components/SearchAutocomplete'
 import { useDebounce } from '@/lib/useDebounce'
 import { MarketCardSkeleton } from '@/components/skeletons/MarketCardSkeleton'
 import { SignalListSkeleton } from '@/components/skeletons/SignalListSkeleton'
+
+// Lazy-loaded components for route-based code splitting
+const MarketDetailPage = lazy(() => import('@/components/MarketDetailPage'))
+const MarketComparisonPage = lazy(() => import('@/components/MarketComparisonPage'))
+const MarketFilterPanel = lazy(() => import('@/components/MarketFilterPanel'))
+
+// Fallback component for lazy loading
+const LazyLoadFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center gap-4">
+      <OracleVisualization size={32} />
+      <span className="text-sm text-muted-foreground font-mono">Loading...</span>
+    </div>
+  </div>
+)
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', 'detail', or 'compare'
@@ -208,16 +221,19 @@ function App() {
   }
 
   const handleMarketSelect = market => {
+    perfMonitor.trackNavigation(currentPage, 'detail')()
     setSelectedMarket(market)
     setCurrentPage('detail')
   }
 
   const handleBackFromDetail = () => {
+    perfMonitor.trackNavigation('detail', 'home')()
     setSelectedMarket(null)
     setCurrentPage('home')
   }
 
   const handleStartComparison = market => {
+    perfMonitor.trackNavigation(currentPage, 'compare')()
     setComparisonMarket1(market)
     setComparisonMarket2(null)
     setCurrentPage('compare')
@@ -258,26 +274,30 @@ function App() {
         {/* Main Content Area with Flip Animation */}
         <main className="flex-1 overflow-y-auto will-change-opacity">
           {currentPage === 'compare' && comparisonMarket1 ? (
-            <div key="compare-content" className="animate-flip-in">
-              <MarketComparisonPage
-                market1={comparisonMarket1}
-                market2={comparisonMarket2}
-                onBack={handleBackFromComparison}
-                onSwap={handleSwapComparisonMarkets}
-              />
-            </div>
+            <Suspense fallback={<LazyLoadFallback />}>
+              <div key="compare-content" className="animate-flip-in">
+                <MarketComparisonPage
+                  market1={comparisonMarket1}
+                  market2={comparisonMarket2}
+                  onBack={handleBackFromComparison}
+                  onSwap={handleSwapComparisonMarkets}
+                />
+              </div>
+            </Suspense>
           ) : currentPage === 'detail' && selectedMarket ? (
-            <div key="detail-content" className="animate-flip-in">
-              <MarketDetailPage
-                market={selectedMarket}
-                onBack={handleBackFromDetail}
-                onQuickResearch={handleQuickResearch}
-                onCompare={handleStartComparison}
-                allMarkets={initialMarkets}
-                onSelectMarket={handleMarketSelect}
-                relatedSignals={signals}
-              />
-            </div>
+            <Suspense fallback={<LazyLoadFallback />}>
+              <div key="detail-content" className="animate-flip-in">
+                <MarketDetailPage
+                  market={selectedMarket}
+                  onBack={handleBackFromDetail}
+                  onQuickResearch={handleQuickResearch}
+                  onCompare={handleStartComparison}
+                  allMarkets={initialMarkets}
+                  onSelectMarket={handleMarketSelect}
+                  relatedSignals={signals}
+                />
+              </div>
+            </Suspense>
           ) : (
             <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
               {currentPage === 'home' ? (
@@ -368,7 +388,7 @@ function App() {
                       {/* Polymarket Section */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 px-1">
-                         <Badge variant="outline">Polymarket</Badge>
+                          <Badge variant="outline">Polymarket</Badge>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                           {initialMarkets.length === 0 ? (
@@ -409,7 +429,7 @@ function App() {
 
                       {/* Kalshi Section */}
                       <div className="space-y-3">
-                         <Badge variant="outline">Kalshi</Badge>
+                        <Badge variant="outline">Kalshi</Badge>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                           {initialMarkets.length === 0 ? (
                             // Show skeleton loaders while loading

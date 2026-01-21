@@ -51,6 +51,9 @@ export default defineConfig({
       }
     }
   },
+  ssr: {
+    noExternal: []
+  },
   server: {
     port: 5173
   }

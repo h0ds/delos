@@ -21,7 +21,7 @@ import { useState, useEffect } from 'react'
 import { analyzeMarket } from '@/lib/analyticsEngine'
 import { getMarketHistory } from '@/lib/marketHistory'
 
-export function MarketDetailPage({
+export default function MarketDetailPage({
   market,
   onBack,
   onQuickResearch,

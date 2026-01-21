@@ -8,7 +8,7 @@ import { VolumeChart } from '@/components/charts/VolumeChart'
 import { LiquidityCard } from '@/components/charts/LiquidityCard'
 import { ProbabilityChart } from '@/components/charts/ProbabilityChart'
 
-export function MarketComparisonPage({ market1, market2, onBack, onSwap }) {
+export default function MarketComparisonPage({ market1, market2, onBack, onSwap }) {
   const [showSettings, setShowSettings] = useState(false)
 
   const formatCurrency = num => {

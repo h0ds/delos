@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { X, Filter } from 'lucide-react'
 
-export function MarketFilterPanel({ markets, onFilter, onReset }) {
+export default function MarketFilterPanel({ markets, onFilter, onReset }) {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState([])
   const [selectedStatus, setSelectedStatus] = useState([])
