@@ -1,35 +1,35 @@
-# Oracle
+# Delos
 
-**The AI Research Agent for Traders**
+**Make Better Decisions.**
 
-Oracle is an open-source, AI-powered signal intelligence tool that continuously monitors market situations and surfaces intelligence traders need to make faster decisions.
-
-**Ask Oracle to research any market situation. Get analyzed findings with full context in seconds.**
+Delos is an intelligent research platform that combines real-time market data with AI-powered analysis to help traders and researchers navigate prediction markets with confidence.
 
 ---
 
-## What is Oracle?
+## What is Delos?
 
-Oracle isn't just a dashboard. It's an AI research agent that:
+Delos bridges the gap between raw market data and actionable intelligence by:
 
-- **Monitors** — Real-time aggregation from multiple sources (NewsAPI, Google News, Reddit)
-- **Analyzes** — Sentiment classification, impact scoring, market tagging
-- **Surfaces** — Intelligent signal presentation with full context
-- **Scores** — Confidence levels for each finding
-- **Alerts** — Critical findings highlighted immediately
+- **Aggregating Markets** — Real-time data from Polymarket, Kalshi, and other prediction market platforms
+- **Researching Topics** — AI-powered signal discovery across news, social media, and market data
+- **Analyzing Context** — Sentiment classification, impact scoring, market correlation detection
+- **Presenting Intelligence** — Clear visualization and comparison tools for informed decision-making
+- **Scoring Impact** — Confidence levels and relevance metrics for every finding
 
-Think of Oracle as your personal AI research assistant working 24/7 to monitor markets and surface what matters.
+Think of Delos as your research assistant for prediction markets—continuously monitoring, analyzing, and surfacing the intelligence you need.
 
 ---
 
 ## Features
 
-✅ **Real-time Monitoring** — WebSocket-based live signal streaming  
-✅ **Intelligent Analysis** — Sentiment, impact scoring, market detection  
-✅ **AI-Powered** — Acts as research agent, not just data display  
-✅ **Instant Insights** — Findings in seconds, not hours  
-✅ **Full Context** — Every signal includes sentiment, impact, source, markets, timestamp  
-✅ **Data Visualization** — Charts for sentiment distribution, signal timeline, impact analysis  
+✅ **Prediction Market Integration** — Polymarket & Kalshi data aggregation  
+✅ **Real-time Signal Analysis** — Multi-source news, social, market data monitoring  
+✅ **Market Research Tools** — Deep dives into market details and related signals  
+✅ **Market Comparison** — Side-by-side analysis of related prediction markets  
+✅ **Sentiment Analysis** — Classify signals as bullish, bearish, or neutral  
+✅ **Impact Scoring** — Rate signal significance for market decisions  
+✅ **Interactive Visualizations** — Charts and analytics for market trends  
+✅ **Full Context** — Every market and signal includes source, time, related data  
 ✅ **Open Source** — MIT licensed, fully auditable, privacy-first  
 ✅ **Type-safe** — Full TypeScript implementation  
 
@@ -37,7 +37,7 @@ Think of Oracle as your personal AI research assistant working 24/7 to monitor m
 
 ## Quick Start
 
-### Try Oracle Now (No Setup)
+### Try Delos Now (No Setup)
 
 ```bash
 npm install
@@ -45,16 +45,11 @@ npm run dev
 # Visit http://localhost:5173
 ```
 
-**Search for:** bitcoin, fed rates, nvidia, election, market crash
-
-Oracle will research the situation and show:
-- Sentiment distribution (bullish/neutral/bearish)
-- Impact analysis (high/medium/low)
-- Signal timeline (24-hour activity)
-- Source breakdown (credibility)
-- Related markets
-
-Toggle "view oracle analytics" to see interactive charts.
+**Explore:**
+- Browse featured prediction markets
+- Search for market signals and analysis
+- Compare related markets side-by-side
+- View real-time analytics
 
 ### Prerequisites
 
@@ -64,18 +59,9 @@ Toggle "view oracle analytics" to see interactive charts.
 ### Local Development
 
 ```bash
-git clone https://github.com/yourusername/oracle.git
-cd oracle
+git clone https://github.com/h0ds/delos.git
+cd delos
 npm install
-```
-
-**Configure environment:**
-```bash
-cp packages/server/.env.example packages/server/.env
-cp packages/client/.env.example packages/client/.env
-
-# Optional: Add NEWS_API_KEY for real signals
-# Get free key: https://newsapi.org
 ```
 
 **Run development servers:**
@@ -92,130 +78,52 @@ npm run dev
 docker-compose build
 docker-compose up
 
-# Or with API key
-export NEWS_API_KEY=your_key
-docker-compose up
+# Frontend: http://localhost:5173
+# Backend: http://localhost:3333
 ```
 
 ---
 
-## How to Use Oracle
+## How to Use Delos
 
-### 1. Ask Oracle a Question
+### 1. Explore Markets
 
-Type any market situation into the search box:
-- "bitcoin" — Get comprehensive Bitcoin analysis
-- "fed policy" — Monitor Federal Reserve
-- "tech earnings" — Track tech sector
-- "prediction markets" — Get prediction market intelligence
+Start on the home page to see featured prediction markets from Polymarket and Kalshi:
+- Browse current markets by category
+- View market metadata (description, expiry, participants)
+- Check data freshness and quality scores
 
-### 2. Review Oracle's Findings
+### 2. Dive Into Market Details
 
-Oracle shows:
-- **Overall Sentiment** — Bullish, bearish, or neutral
-- **Market Impact** — How much could this move markets
-- **Signal Count** — How many sources reporting
-- **High Impact Signals** — What needs immediate attention
+Click any market to see:
+- **Market Overview** — Question, description, resolution criteria
+- **Price History** — How odds have shifted over time
+- **Related Signals** — News and discussions relevant to this market
+- **Market Comparison** — Compare with similar markets
 
-### 3. View Analytics
+### 3. Research Markets
 
-Click "view oracle analytics" to see:
-- Sentiment distribution (pie chart)
-- Signal activity timeline (24h area chart)
-- Impact level breakdown (bar chart)
-- Source credibility analysis
-- Related markets tracking
+Use the search functionality to:
+- Find signals about specific topics
+- Get AI-powered analysis of market relevance
+- Discover related markets you might have missed
+- Understand sentiment across sources
 
-### 4. Drill Into Signals
+### 4. Compare Markets
 
-Review individual signal cards:
-- **Title** — What happened
-- **Source** — Who reported it (credibility)
-- **Time** — When it happened
-- **Sentiment** — Bullish/bearish/neutral
-- **Impact** — How significant
-- **Markets** — Which markets are affected
+Select two markets to see:
+- Side-by-side details and metrics
+- Correlation analysis
+- Overlapping signals
+- Independent predictions
 
-### 5. Verify & Act
+### 5. Make Informed Decisions
 
-- Click "source" to read original article
-- Cross-check with other sources
-- Make your trading decision
-- Set alerts for updates (coming Q2 2026)
-
----
-
-## WebSocket API
-
-Connect programmatically and emit queries:
-
-```javascript
-import { io } from 'socket.io-client'
-
-const socket = io('http://localhost:3333')
-
-socket.on('connect', () => {
-  socket.emit('signal:query', 'bitcoin')
-})
-
-socket.on('signals', (signals) => {
-  console.log('Signals received:', signals)
-})
-
-socket.on('scan:start', (data) => {
-  console.log('Oracle is researching:', data.query)
-})
-
-socket.on('scan:complete', (data) => {
-  console.log('Research complete:', data.count, 'signals found')
-})
-```
-
-### Events
-
-**Client → Server:**
-- `signal:query` — Ask Oracle to research a topic
-
-**Server → Client:**
-- `scan:start` — Oracle started researching
-- `signals` — Array of discovered signals
-- `scan:complete` — Research finished with count
-- `error` — Error message if research failed
-
-### Signal Format
-
-```typescript
-interface Signal {
-  source: string                // "Reuters", "Google News", "r/cryptocurrency"
-  title: string                 // Article/post title
-  summary?: string              // Brief excerpt
-  date?: string                 // ISO 8601 timestamp
-  url?: string                  // Link to source
-  category: 'news' | 'social'   // Content type
-  impact: number                // 0-1 market impact score
-  sentiment: number             // -1 to +1 (bearish to bullish)
-  relatedMarkets: string[]      // ["BTC", "ETH", "SPX"]
-}
-```
-
----
-
-## Configuration
-
-**Server** (`.env`):
-```bash
-NODE_ENV=development
-PORT=3333
-CORS_ORIGIN=http://localhost:5173
-NEWS_API_KEY=your_newsapi_key  # Get free: https://newsapi.org
-```
-
-**Client** (`.env`):
-```bash
-VITE_SOCKET_URL=http://localhost:3333
-```
-
-For production deployment, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+Delos provides the context you need:
+- What are traders saying? (Sentiment)
+- How significant is this news? (Impact)
+- Which markets are affected? (Correlation)
+- Where's the best value? (Comparison)
 
 ---
 
@@ -229,21 +137,22 @@ packages/
 │   │   ├── config.ts             Environment config
 │   │   ├── types.ts              Type definitions
 │   │   └── services/
-│   │       └── signalAggregator.ts   Multi-source fetching
+│   │       ├── marketAggregator.ts   Multi-source data
+│   │       └── signalAnalysis.ts     Analysis engine
 │   └── tsconfig.json
-└── client/              React + Vite + Recharts
+└── client/              React + Vite + shadcn/ui + Recharts
     ├── src/
     │   ├── App.jsx               Main app
     │   ├── components/
-    │   │   ├── OracleHeader.jsx      Oracle branding
-    │   │   ├── OracleResearch.jsx    Research status
-    │   │   └── Dashboard.jsx        Analytics
+    │   │   ├── layout/           Header, navigation
+    │   │   ├── market/           Market cards, details
+    │   │   ├── signals/          Signal cards, search
+    │   │   ├── pages/            Detail and comparison pages
+    │   │   └── ui/               shadcn components
+    │   ├── hooks/
     │   ├── lib/
-    │   │   ├── socket.ts        WebSocket client
-    │   │   ├── mockData.ts      Demo data generator
-    │   │   └── utils.js
     │   ├── types.ts
-    │   └── index.css            Design system
+    │   └── index.css             Design system
     └── vite.config.js
 ```
 
@@ -253,45 +162,66 @@ packages/
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/status` | GET | Oracle health & configuration |
+| `/api/status` | GET | Server health & info |
+| WebSocket: `markets` | Event | Real-time market data |
+| WebSocket: `signal:query` | Event | Request signal analysis |
 
-*All signal queries use WebSocket (`socket.io`)*
+---
+
+## WebSocket Events
+
+### Client → Server
+
+- `signal:query` — Request analysis for a topic
+  ```json
+  { "query": "bitcoin ETF" }
+  ```
+
+### Server → Client
+
+- `markets` — Real-time market feed
+- `scan:start` — Analysis started
+- `signals` — Discovered signals and analysis
+- `scan:complete` — Analysis finished
+- `error` — Error message
 
 ---
 
 ## Sentiment Analysis
 
-Oracle classifies signals as:
+Delos classifies signals as:
 
-- **Bullish** — Positive indicators (surge, gain, growth, success, rally)
-- **Bearish** — Negative indicators (crash, fall, drop, loss, decline)
-- **Neutral** — Factual reporting (announces, reports, confirms)
+- **Bullish** — Positive indicators (rally, gain, growth, approval, surge)
+- **Bearish** — Negative indicators (crash, loss, decline, concern, drop)
+- **Neutral** — Factual reporting (announces, reports, confirms, data)
 
-Confidence level (0.0-1.0) shows how certain Oracle is.
+Each classification includes a confidence score (0.0-1.0).
 
 ---
 
 ## Impact Scoring
 
-Oracle scores signal impact from 0-1:
+Signals are scored 0-1 for market impact:
 
-- **High Impact (0.7-1.0)** — Could significantly move markets
-  - Breaking news, central bank decisions, major events
+- **High Impact (0.7-1.0)** — Could significantly affect market odds
+  - Breaking news, major announcements, policy changes
 - **Medium Impact (0.4-0.7)** — Notable developments
-  - Earnings, reports, announcements
+  - Updates, reports, earnings
 - **Low Impact (0-0.4)** — Background information
-  - Minor updates, opinion pieces
+  - Opinion pieces, analysis, minor updates
 
 ---
 
 ## Data Sources
 
-Oracle aggregates from:
-- **NewsAPI** — Breaking news across 50+ sources
+Delos aggregates from:
+- **Polymarket API** — Prediction markets with real-time data
+- **Kalshi API** — Binary event prediction markets
+- **NewsAPI** — Breaking news across 50+ outlets
 - **Google News RSS** — Broad news coverage
 - **Reddit** — Community signals and discussions
 
-Future sources (planned):
+Future sources:
 - Twitter/X
 - TradingView
 - Bloomberg
@@ -301,16 +231,16 @@ Future sources (planned):
 
 ## Design System
 
-Oracle uses a professional dark-first interface:
+Delos uses a professional, data-focused interface:
 
-- **Dark Theme** — Professional appearance, eye-strain reduction
+- **Dark Theme** — Reduces eye strain, modern appearance
 - **Monospace for Data** — Clear, readable metrics and labels
 - **Semantic Colors** — Green (bullish), Red (bearish), Yellow (caution)
-- **High Contrast** — WCAG AA+ accessibility (18:1 ratio)
+- **High Contrast** — WCAG AA+ accessibility
 - **Responsive** — Works on mobile, tablet, desktop
-- **Zero Hardcoded Colors** — All colors as CSS variables
+- **Minimal Animations** — Subtle, purposeful transitions
 
-See [DESIGN.md](./DESIGN.md) for complete design system documentation.
+See [STYLE_GUIDE.md](./STYLE_GUIDE.md) for complete design documentation.
 
 ---
 
@@ -320,7 +250,6 @@ See [DESIGN.md](./DESIGN.md) for complete design system documentation.
 
 ```bash
 npm run build          # Build all packages
-npm run build --workspaces
 ```
 
 ### Linting & Formatting
@@ -332,74 +261,57 @@ npm run format        # Format with Prettier
 npm run format:check  # Check formatting
 ```
 
-### Running Tests (When Added)
-
-```bash
-npm run test
-```
-
 ---
 
 ## Deployment
 
-Oracle can be deployed to:
-- **Docker** — Docker Compose for local dev, Docker for production
-- **Heroku** — One-click deployment
+Delos can be deployed to:
+- **Docker** — Docker Compose or standalone
+- **Vercel** — Frontend (React)
+- **Heroku** — Backend (Node.js)
 - **AWS** — EC2, ECS, or Lambda
 - **DigitalOcean** — App Platform or VPS
-- **Vercel** — Frontend deployment
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed platform-specific guides.
+See docs/ folder for deployment guides.
 
 ---
 
-## Understanding Oracle
+## Configuration
 
-### The Oracle Concept
+**Server** (`.env`):
+```bash
+NODE_ENV=development
+PORT=3333
+CORS_ORIGIN=http://localhost:5173
+```
 
-Oracle is not just a tool—it's an **AI research agent**:
-
-- **Not passive:** Oracle actively monitors and analyzes
-- **Always working:** 24/7 signal monitoring
-- **Intelligent:** Adds context and analysis, not just data
-- **Trustworthy:** All findings are sourced and verified
-- **Actionable:** Intelligence focused on decision support
-
-See [ORACLE_CONCEPT.md](./ORACLE_CONCEPT.md) for detailed explanation.
-
-### How Oracle Differs
-
-| Tool | Approach |
-|------|----------|
-| **News Websites** | Shows headlines, you synthesize |
-| **Trading Platforms** | Shows prices, you research |
-| **Oracle** | Shows analyzed intelligence, ready to act |
+**Client** (`.env`):
+```bash
+VITE_SOCKET_URL=http://localhost:3333
+```
 
 ---
 
 ## Contributing
 
-Oracle is open-source and welcomes contributions!
+Delos is open-source and welcomes contributions!
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
 - Development setup
 - Code style guidelines
 - Testing practices
 - Pull request process
-- Areas for contribution
 
 ---
 
 ## Documentation
 
-- **[QUICKSTART.md](./QUICKSTART.md)** — 60-second setup guide
-- **[ORACLE_CONCEPT.md](./ORACLE_CONCEPT.md)** — Understanding the Oracle concept
-- **[DESIGN.md](./DESIGN.md)** — Design system & interface
-- **[AGENTS.md](./AGENTS.md)** — Agent commands & structure
-- **[STYLE_GUIDE.md](./STYLE_GUIDE.md)** — Code standards
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — How to contribute
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** — Deployment guides
-- **[MISSION.md](./MISSION.md)** — Core principles & philosophy
+- **[QUICKSTART.md](./QUICKSTART.md)** — 60-second setup
+- **[STYLE_GUIDE.md](./STYLE_GUIDE.md)** — Code standards & design
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — Contributing guide
+- **[AGENTS.md](./AGENTS.md)** — Development commands
+
+See `docs/` folder for extended documentation.
 
 ---
 
@@ -411,26 +323,26 @@ MIT License — Free to use, modify, and distribute.
 
 ## The Promise
 
-When you ask Oracle to research a market situation, you get:
+When you use Delos to research prediction markets, you get:
 
-1. **Findings in seconds** (not hours of manual research)
-2. **Full context provided** (sentiment, impact, sources, markets)
-3. **Sources cited** (verify independently)
-4. **Confidence shown** (how sure is Oracle?)
-5. **Next steps obvious** (what to do with this information)
+1. **Current Market Data** — Real-time odds and metadata
+2. **Relevant Signals** — News and discussions that matter
+3. **Clear Analysis** — Sentiment and impact scoring
+4. **Sources Cited** — Verify everything independently
+5. **Confidence Shown** — How sure is the analysis?
 
-And you know Oracle has been monitoring continuously, ensuring you haven't missed anything critical.
+Delos helps you make better decisions in prediction markets.
 
 ---
 
 **Status:** 🟢 **Production Ready**
 
-Oracle is fully featured, documented, tested, and ready for real-world use.
+Delos is fully featured, documented, and ready for real-world use.
 
 ---
 
-*Oracle: The AI research agent for traders who can't afford to be slow.*
+*Delos: Make Better Decisions.*
 
 ---
 
-Last updated: January 20, 2026
+Last updated: January 21, 2026
