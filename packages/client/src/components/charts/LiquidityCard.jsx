@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 export function LiquidityCard({ liquidity = 0, volume = 0, isPolymarket = true }) {
   // Calculate liquidity ratio (how much of daily volume is tied up in liquidity)
   const liquidityRatio = volume > 0 ? (liquidity / volume) * 100 : 0
-  const isHealthy = liquidityRatio > 5 // More than 5% liquidity to volume ratio is good
 
   // Determine health status
   let healthStatus = 'Low'

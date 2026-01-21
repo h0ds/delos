@@ -1,4 +1,4 @@
-import { formatNumber, formatPrice, formatLargeNumber, formatPercent } from '@/lib/formatters'
+import { formatPrice, formatPercent, formatVolume } from '@/lib/formatters'
 
 /**
  * Professional candlestick chart visualization (proper spacing, beautiful formatting)

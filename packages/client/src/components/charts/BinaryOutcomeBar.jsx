@@ -3,19 +3,68 @@
  * Shows a single bar with proportional red/green segments for two-sided markets
  */
 
-export function BinaryOutcomeBar({ outcomes = [] }) {
+export function BinaryOutcomeBar({ outcomes = [], compact = false }) {
   if (!outcomes || outcomes.length !== 2) return null
 
   // Sort outcomes so positive outcome (Yes) is first
-  const sortedOutcomes = [...outcomes].sort((a, b) => {
+  const sortedOutcomes = [...outcomes].sort(a => {
     const aIsYes = a.name.toLowerCase() === 'yes'
-    const bIsYes = b.name.toLowerCase() === 'yes'
     return aIsYes ? -1 : 1
   })
 
   const [yesOutcome, noOutcome] = sortedOutcomes
   const yesProbability = Math.max(0, Math.min(1, yesOutcome?.probability || 0))
   const noProbability = 1 - yesProbability
+
+  if (compact) {
+    // Compact version: labels above, bar below
+    return (
+      <div className="w-full space-y-2">
+        {/* Labels Above */}
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-sm bg-green-500" />
+            <span className="font-mono text-foreground font-semibold">
+              {yesOutcome.name}
+            </span>
+            <span className="font-mono text-muted-foreground">
+              {(yesProbability * 100).toFixed(1)}%
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-muted-foreground">
+              {(noProbability * 100).toFixed(1)}%
+            </span>
+            <span className="font-mono text-foreground font-semibold">
+              {noOutcome.name}
+            </span>
+            <div className="w-2 h-2 rounded-sm bg-red-500" />
+          </div>
+        </div>
+
+        {/* Bar */}
+        <div className="relative h-8 rounded-md overflow-hidden border border-border/40 bg-card/30">
+          {/* Green (Yes) segment */}
+          <div
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600/90 to-green-500/80 transition-all duration-500"
+            style={{ width: `${yesProbability * 100}%` }}
+          />
+
+          {/* Red (No) segment */}
+          <div
+            className="absolute inset-y-0 right-0 bg-gradient-to-l from-red-600/90 to-red-500/80 transition-all duration-500"
+            style={{ width: `${noProbability * 100}%` }}
+          />
+
+          {/* Center divider line */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-white/20 pointer-events-none"
+            style={{ left: `${yesProbability * 100}%` }}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full space-y-3">

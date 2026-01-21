@@ -10,30 +10,49 @@ import {
 } from 'recharts'
 import { getMarketHistory } from '@/lib/marketHistory'
 
-export function VolumeChart({ volume = 0, marketId = null, source = 'polymarket' }) {
-  const [data, setData] = useState([])
+export function VolumeChart({ marketId = null, source = 'polymarket' }) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadData = async () => {
-      if (marketId) {
-        // Try to fetch real historical data
-        const history = await getMarketHistory(marketId, source)
-        setData(history)
-      } else {
-        // Generate mock data if no marketId provided
-        setData(generateMockHistory(7, volume))
+      try {
+        setLoading(true)
+        if (marketId) {
+          // Try to fetch real historical data
+          const history = await getMarketHistory(marketId, source)
+          setData(history)
+        } else {
+          setData(null)
+        }
+      } finally {
+        setLoading(false)
       }
     }
 
     loadData()
-  }, [marketId, source, volume])
-
-  const maxVolume = Math.max(...data.map(d => d.volume), 1)
+  }, [marketId, source])
 
   const formatVolume = value => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
     if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
     return `$${value}`
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">No volume data available</div>
+      </div>
+    )
   }
 
   return (
@@ -80,21 +99,4 @@ export function VolumeChart({ volume = 0, marketId = null, source = 'polymarket'
       </ResponsiveContainer>
     </div>
   )
-}
-
-function generateMockHistory(days, volume = 1500000) {
-  const data = []
-  const today = new Date()
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const variance = Math.random() * 0.4 + 0.8
-    data.push({
-      dateDisplay: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      volume: Math.round(volume * variance)
-    })
-  }
-
-  return data
 }

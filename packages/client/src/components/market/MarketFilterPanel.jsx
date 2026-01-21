@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { X, Filter } from 'lucide-react'
 
-export default function MarketFilterPanel({ markets, onFilter, onReset }) {
+export default function MarketFilterPanel({ markets, onFilter, onReset, inline = false }) {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState([])
   const [selectedStatus, setSelectedStatus] = useState([])
@@ -49,14 +49,14 @@ export default function MarketFilterPanel({ markets, onFilter, onReset }) {
     maxVolume < Infinity
 
   return (
-    <div className="space-y-3">
+    <div className={inline ? '' : 'space-y-3'}>
       {/* Filter Toggle Button */}
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className="text-xs font-mono gap-1.5"
+          className="text-xs font-mono gap-1.5 h-6 px-2"
         >
           <Filter className="w-3 h-3" />
           {hasActiveFilters && (
@@ -70,7 +70,7 @@ export default function MarketFilterPanel({ markets, onFilter, onReset }) {
             variant="ghost"
             size="sm"
             onClick={resetFilters}
-            className="text-xs font-mono gap-1"
+            className="text-xs font-mono gap-1 h-6 px-2"
           >
             <X className="w-3 h-3" />
             Reset
@@ -78,106 +78,116 @@ export default function MarketFilterPanel({ markets, onFilter, onReset }) {
         )}
       </div>
 
-      {/* Filter Panel */}
+      {/* Filter Panel - Floating Overlay */}
       {showFilters && (
-        <Card className="border-border/50 bg-card/50 backdrop-blur animate-fade-in">
-          <CardContent className="p-4 space-y-4">
-            {/* Categories */}
-            {categories.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-semibold font-mono text-muted-foreground block">
-                  Categories
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {categories.map(cat => (
-                    <Badge
-                      key={cat}
-                      variant={selectedCategories.includes(cat) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:border-primary transition-colors"
-                      onClick={() => {
-                        setSelectedCategories(prev =>
-                          prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-                        )
-                      }}
-                    >
-                      {cat}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowFilters(false)}
+          />
+          {/* Panel */}
+          <div className="fixed top-20 right-6 z-50 max-w-sm animate-fade-in">
+            <Card className="border-border/50 bg-card/90 backdrop-blur-sm shadow-lg">
+              <CardContent className="p-4 space-y-4">
+                {/* Categories */}
+                {categories.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold font-mono text-muted-foreground block">
+                      Categories
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {categories.map(cat => (
+                        <Badge
+                          key={cat}
+                          variant={selectedCategories.includes(cat) ? 'default' : 'outline'}
+                          className="cursor-pointer hover:border-primary transition-colors"
+                          onClick={() => {
+                            setSelectedCategories(prev =>
+                              prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+                            )
+                          }}
+                        >
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Status */}
-            {statuses.length > 0 && (
-              <div className="space-y-2 border-t border-border/30 pt-3">
-                <label className="text-xs font-semibold font-mono text-muted-foreground block">
-                  Status
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {statuses.map(status => (
-                    <Badge
-                      key={status}
-                      variant={selectedStatus.includes(status) ? 'default' : 'outline'}
-                      className="cursor-pointer hover:border-primary transition-colors capitalize"
-                      onClick={() => {
-                        setSelectedStatus(prev =>
-                          prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-                        )
-                      }}
-                    >
-                      {status === 'active' ? '◉ Live' : '◯ ' + status}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+                {/* Status */}
+                {statuses.length > 0 && (
+                  <div className="space-y-2 border-t border-border/30 pt-3">
+                    <label className="text-xs font-semibold font-mono text-muted-foreground block">
+                      Status
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {statuses.map(status => (
+                        <Badge
+                          key={status}
+                          variant={selectedStatus.includes(status) ? 'default' : 'outline'}
+                          className="cursor-pointer hover:border-primary transition-colors capitalize"
+                          onClick={() => {
+                            setSelectedStatus(prev =>
+                              prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+                            )
+                          }}
+                        >
+                          {status === 'active' ? '◉ Live' : '◯ ' + status}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Volume Range */}
-            <div className="space-y-2 border-t border-border/30 pt-3">
-              <label className="text-xs font-semibold font-mono text-muted-foreground block">
-                Volume Range (24h)
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Min Volume</label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={minVolume === 0 ? '' : minVolume}
-                    onChange={e => setMinVolume(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="h-8 text-xs"
-                  />
+                {/* Volume Range */}
+                <div className="space-y-2 border-t border-border/30 pt-3">
+                  <label className="text-xs font-semibold font-mono text-muted-foreground block">
+                    Volume Range (24h)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Min Volume</label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={minVolume === 0 ? '' : minVolume}
+                        onChange={e => setMinVolume(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Max Volume</label>
+                      <Input
+                        type="number"
+                        placeholder="∞"
+                        value={maxVolume === Infinity ? '' : maxVolume}
+                        onChange={e =>
+                          setMaxVolume(Math.max(minVolume, parseInt(e.target.value) || Infinity))
+                        }
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Max Volume</label>
-                  <Input
-                    type="number"
-                    placeholder="∞"
-                    value={maxVolume === Infinity ? '' : maxVolume}
-                    onChange={e =>
-                      setMaxVolume(Math.max(minVolume, parseInt(e.target.value) || Infinity))
-                    }
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* Apply Button */}
-            <div className="flex gap-2 pt-2 border-t border-border/30">
-              <Button onClick={applyFilters} className="btn-modern flex-1 text-xs h-8">
-                Apply Filters
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setShowFilters(false)}
-                className="flex-1 text-xs h-8"
-              >
-                Close
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                {/* Apply Button */}
+                <div className="flex gap-2 pt-2 border-t border-border/30">
+                  <Button onClick={applyFilters} className="btn-modern flex-1 text-xs h-8">
+                    Apply Filters
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowFilters(false)}
+                    className="flex-1 text-xs h-8"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </div>
   )

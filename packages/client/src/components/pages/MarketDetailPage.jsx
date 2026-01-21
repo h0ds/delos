@@ -44,22 +44,25 @@ export default function MarketDetailPage({
 
         const history = await getMarketHistory(marketId, source, 7)
 
-        // Transform history into TrendPoints with mock sentiment data
-        const trendPoints = history.map((point, idx) => ({
-          timestamp: Date.now() - (history.length - idx) * 3600000, // 1 hour apart
-          value: point.volume || 0, // Using volume as proxy for activity
-          sentiment: (Math.random() - 0.5) * 2 // Random sentiment -1 to 1 for now
-        }))
+        // Only analyze if we have real history data
+        if (history && history.length > 0) {
+          // Transform history into TrendPoints
+          const trendPoints = history.map((point, idx) => ({
+            timestamp: Date.now() - (history.length - idx) * 3600000, // 1 hour apart
+            value: point.volume || 0, // Using volume as proxy for activity
+            sentiment: 0
+          }))
 
-        // Generate sentiment scores from market outcomes if available
-        const sentimentScores = market.outcomes?.map(o => o.probability * 2 - 1) || []
+          // Generate sentiment scores from market outcomes if available
+          const sentimentScores = market.outcomes?.map(o => o.probability * 2 - 1) || []
 
-        // Analyze market data - only if we have valid trend points
-        if (trendPoints.length > 0 && trendPoints.some(p => !isNaN(p.value))) {
-          const marketAnalytics = analyzeMarket(trendPoints, sentimentScores)
-          setAnalytics(marketAnalytics)
+          // Analyze market data - only if we have valid trend points
+          if (trendPoints.length > 0 && trendPoints.some(p => !isNaN(p.value))) {
+            const marketAnalytics = analyzeMarket(trendPoints, sentimentScores)
+            setAnalytics(marketAnalytics)
+          }
         } else {
-          console.warn('[market-detail] invalid trend points, skipping analytics')
+          console.log('[market-detail] no history data available')
         }
       } catch (error) {
         console.error('[market-detail] error loading analytics:', error)
@@ -146,61 +149,107 @@ export default function MarketDetailPage({
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-        {/* Title Section */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-foreground leading-tight">
-              {market.question}
-            </h1>
-            {market.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
-                {market.description}
-              </p>
-            )}
-          </div>
+        {/* Title Section with Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left: Title & Description */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold text-foreground leading-tight">
+                {market.question}
+              </h1>
+              {market.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {market.description}
+                </p>
+              )}
+            </div>
 
-          {/* Status & Metadata Row */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Market Source Badge */}
-            <Badge
-              className={`text-xs font-mono px-3 py-1 ${
-                isPolymarket
-                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-              }`}
-              variant="outline"
-            >
-              {marketSource}
-            </Badge>
-
-            {market.status && (
+            {/* Status & Metadata Row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Market Source Badge */}
               <Badge
                 className={`text-xs font-mono px-3 py-1 ${
-                  market.status === 'active'
-                    ? 'bg-bullish/10 text-bullish border-bullish/30'
-                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                  isPolymarket
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                 }`}
                 variant="outline"
               >
-                {market.status === 'active' ? 'Live' : 'Closed'}
+                {marketSource}
               </Badge>
+
+              {market.status && (
+                <Badge
+                  className={`text-xs font-mono px-3 py-1 ${
+                    market.status === 'active'
+                      ? 'bg-bullish/10 text-bullish border-bullish/30'
+                      : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                  }`}
+                  variant="outline"
+                >
+                  {market.status === 'active' ? 'Live' : 'Closed'}
+                </Badge>
+              )}
+              {market.category && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-mono px-2 py-1 bg-primary/5 text-primary border-primary/30"
+                >
+                  {market.category}
+                </Badge>
+              )}
+              {market.dataFreshness && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-mono px-2 py-1 bg-muted/50 text-muted-foreground border-border/50"
+                >
+                  <Calendar className="h-3 w-3 mr-1 inline" />
+                  {market.dataFreshness.daysOld} Days Old
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Market Statistics */}
+          <div className="space-y-3">
+            {/* Probability Distribution - Compact */}
+            {market.outcomes && market.outcomes.length > 0 && (
+              <div className="bg-card rounded-lg p-4 border border-border/60">
+                <ProbabilityChart outcomes={market.outcomes} compact />
+              </div>
             )}
-            {market.category && (
-              <Badge
-                variant="outline"
-                className="text-xs font-mono px-2 py-1 bg-primary/5 text-primary border-primary/30"
-              >
-                {market.category}
-              </Badge>
+
+            {market.volume24h > 0 && (
+              <div className="bg-card rounded-lg p-4 border border-border/60">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
+                  24h Volume
+                </p>
+                <p className="text-2xl font-mono font-semibold text-primary">
+                  ${(market.volume24h / 1000000).toFixed(2)}M
+                </p>
+              </div>
             )}
-            {market.dataFreshness && (
-              <Badge
-                variant="outline"
-                className="text-xs font-mono px-2 py-1 bg-muted/50 text-muted-foreground border-border/50"
-              >
-                <Calendar className="h-3 w-3 mr-1 inline" />
-                {market.dataFreshness.daysOld} Days Old
-              </Badge>
+
+            {market.liquidity > 0 && (
+              <div className="bg-card rounded-lg p-4 border border-border/60">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
+                  {isPolymarket ? 'Liquidity' : 'Open Interest'}
+                </p>
+                <p className="text-2xl font-mono font-semibold text-primary">
+                  ${(market.liquidity / 1000).toFixed(0)}K
+                </p>
+              </div>
+            )}
+
+            {market.volumeNum && (
+              <div className="bg-card rounded-lg p-4 border border-border/60">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
+                  Total Volume
+                </p>
+                <p className="text-2xl font-mono font-semibold text-primary">
+                  ${(market.volumeNum / 1000000).toFixed(2)}M
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -209,19 +258,6 @@ export default function MarketDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Probability Distribution */}
-            <Card className="border-border/40 bg-card/40">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-mono text-muted-foreground flex items-center gap-2">
-                  <Target className="h-4 w-4 text-primary" />
-                  Probability Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ProbabilityChart outcomes={market.outcomes} />
-              </CardContent>
-            </Card>
-
             {/* Volume Chart */}
             {market.volume24h > 0 && (
               <Card className="border-border/40 bg-card/40">
@@ -280,45 +316,6 @@ export default function MarketDetailPage({
 
           {/* Right Column - Metadata */}
           <div className="space-y-6">
-            {/* Market Stats */}
-            <Card className="border-border/40 bg-card/40">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-mono text-muted-foreground">
-                  Market Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {market.volume24h > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-mono text-muted-foreground">24h Volume</p>
-                    <p className="text-lg font-mono font-semibold text-primary">
-                      ${(market.volume24h / 1000000).toFixed(2)}M
-                    </p>
-                  </div>
-                )}
-
-                {market.liquidity > 0 && (
-                  <div className="space-y-1 border-t border-border/30 pt-3">
-                    <p className="text-xs font-mono text-muted-foreground">
-                      {isPolymarket ? 'Liquidity' : 'Open Interest'}
-                    </p>
-                    <p className="text-lg font-mono font-semibold text-primary">
-                      ${(market.liquidity / 1000).toFixed(0)}K
-                    </p>
-                  </div>
-                )}
-
-                {market.volumeNum && (
-                  <div className="space-y-1 border-t border-border/30 pt-3">
-                    <p className="text-xs font-mono text-muted-foreground">Total Volume</p>
-                    <p className="text-lg font-mono font-semibold text-primary">
-                      ${(market.volumeNum / 1000000).toFixed(2)}M
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             {/* Liquidity Visualization */}
             {market.liquidity > 0 && (
               <LiquidityCard

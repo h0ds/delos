@@ -9,13 +9,12 @@ import {
   getConfidenceBadgeType
 } from '@/lib/badgeSystem'
 import {
-  formatNumber,
   formatPercent,
   formatPrice,
-  formatVolume,
   formatConfidence,
   formatCorrelation,
-  formatSentiment
+  formatSentiment,
+  formatVolatility
 } from '@/lib/formatters'
 
 /**
@@ -31,7 +30,6 @@ export function TrendAnalysisChart({
   priceHistory,
   ohlcCandles,
   analytics,
-  marketName = 'Market',
   source = 'polymarket'
 }) {
   if (!priceHistory || priceHistory.length === 0 || !analytics) {
@@ -68,17 +66,9 @@ export function TrendAnalysisChart({
       isReal: true // Mark as real data
     }))
   } else {
-    console.warn('[TrendAnalysis] No real OHLC candles available, using price history as fallback')
-    // Fallback: Generate from price history (less accurate but works)
-    candleData = priceHistory.slice(-8).map((point, idx) => ({
-      open: point.value * (0.98 + Math.random() * 0.04),
-      high: point.value * (1.01 + Math.random() * 0.04),
-      low: point.value * (0.95 + Math.random() * 0.03),
-      close: point.value,
-      volume: 1000000 + Math.random() * 2000000,
-      time: idx,
-      isReal: false // Mark as generated data
-    }))
+    console.warn('[TrendAnalysis] No real OHLC candles available')
+    // Without real OHLC data, we cannot display candlesticks accurately
+    candleData = []
   }
 
   // Safe sentiment access with fallbacks
@@ -87,7 +77,6 @@ export function TrendAnalysisChart({
     typeof sentiment.priceCorrelation === 'number' ? sentiment.priceCorrelation : 0
   const predictiveValue =
     typeof sentiment.predictiveValue === 'number' ? sentiment.predictiveValue : 0
-  const sentimentStrength = sentiment.strength || 'unknown'
   const sentimentDirection = sentiment.direction || 'neutral'
 
   // Get badge types for consistency
@@ -189,9 +178,17 @@ export function TrendAnalysisChart({
       </div>
 
       {/* ===== CANDLESTICK CHART ===== */}
-      <div className="bg-card rounded-lg p-5 border border-border/60">
-        <CandlestickChart data={candleData} title="Price Action (7 Periods)" />
-      </div>
+      {candleData && candleData.length > 0 ? (
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <CandlestickChart data={candleData} title="Price Action (7 Periods)" />
+        </div>
+      ) : (
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <p className="text-center text-sm text-muted-foreground">
+            OHLC data not available
+          </p>
+        </div>
+      )}
 
       {/* ===== SUPPORT & RESISTANCE ===== */}
       {prediction24h.supportLevel && prediction24h.resistanceLevel && (

@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { BinaryOutcomeBar } from './BinaryOutcomeBar'
 
-export function ProbabilityChart({ outcomes = [] }) {
+export function ProbabilityChart({ outcomes = [], compact = false }) {
   if (!outcomes || outcomes.length === 0) return null
 
   // Check if this is a binary outcome (Yes/No, True/False, etc.)
@@ -24,7 +24,7 @@ export function ProbabilityChart({ outcomes = [] }) {
   if (isBinary) {
     return (
       <div className="w-full">
-        <BinaryOutcomeBar outcomes={outcomes} />
+        <BinaryOutcomeBar outcomes={outcomes} compact={compact} />
       </div>
     )
   }

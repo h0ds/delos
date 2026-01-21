@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip } from '@/components/ui/tooltip'
 import { Search, AlertCircle } from 'lucide-react'
 import { OracleHeader } from '@/components/layout/OracleHeader'
 import { OracleVisualization } from '@/components/layout/OracleVisualization'
@@ -36,7 +37,6 @@ function App() {
   const {
     initialMarkets,
     setInitialMarkets,
-    markets,
     setMarkets,
     dataQuality,
     filteredMarkets,
@@ -64,7 +64,6 @@ function App() {
     comparisonMarket1,
     comparisonMarket2,
     navigateToComparison,
-    selectSecondMarketForComparison,
     swapComparisonMarkets,
     resetComparison
   } = usePageNavigation()
@@ -205,12 +204,12 @@ function App() {
                   {/* Market Grid - Flexible Bento Layout */}
                   {initialMarkets && initialMarkets.length > 0 && (
                     <div className="space-y-6 animate-fade-in-slow">
-                      {/* Header with Data Quality */}
+                      {/* Header with Data Quality and Filters */}
                       <div className="flex items-center justify-between">
                         <div className="text-xs font-mono text-muted-foreground">
                           Featured Markets
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {/* Data Quality Score */}
                           {dataQuality && (
                             <Badge
@@ -228,24 +227,26 @@ function App() {
                             </Badge>
                           )}
 
-                          {/* Data Freshness Warning */}
-                          <Badge
-                            variant="outline"
-                            className="text-xs py-0 px-2 h-6 border-yellow-500/30 bg-yellow-500/5 text-yellow-400 font-mono cursor-help"
-                            title="Polymarket API contains primarily 2020-2021 markets. Kalshi integration pending."
-                          >
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Limited Data
-                          </Badge>
+                          {/* Data Freshness Warning with Tooltip */}
+                          <Tooltip text="Polymarket API contains primarily 2020-2021 markets. Kalshi integration pending.">
+                            <Badge
+                              variant="outline"
+                              className="text-xs py-0 px-2 h-6 border-yellow-500/30 bg-yellow-500/5 text-yellow-400 font-mono cursor-help"
+                            >
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Limited Data
+                            </Badge>
+                          </Tooltip>
+
+                          {/* Market Filter Panel - Inline */}
+                          <MarketFilterPanel
+                            markets={initialMarkets}
+                            onFilter={setFilteredMarkets}
+                            onReset={() => setFilteredMarkets([])}
+                            inline
+                          />
                         </div>
                       </div>
-
-                      {/* Market Filter Panel */}
-                      <MarketFilterPanel
-                        markets={initialMarkets}
-                        onFilter={setFilteredMarkets}
-                        onReset={() => setFilteredMarkets([])}
-                      />
 
                       {/* Polymarket Section */}
                       <div className="space-y-3">

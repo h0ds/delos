@@ -19,13 +19,12 @@ export async function getMarketHistory(marketId, source = 'polymarket', days = 7
       return formatHistoryData(response.data.history, source)
     }
 
-    // If no data, generate mock
-    console.log('[market-history] ⚠️ no history data from backend, using mock')
-    return generateMockHistory(days)
+    // Return null if no data available
+    console.log('[market-history] no history data from backend')
+    return null
   } catch (error) {
     console.warn('[market-history] error fetching from backend:', error.message)
-    // Always fallback to mock data
-    return generateMockHistory(days)
+    return null
   }
 }
 
@@ -34,7 +33,7 @@ export async function getMarketHistory(marketId, source = 'polymarket', days = 7
  */
 function formatHistoryData(history, source) {
   if (!Array.isArray(history) || history.length === 0) {
-    return generateMockHistory(7)
+    return null
   }
 
   try {
@@ -61,40 +60,11 @@ function formatHistoryData(history, source) {
       }))
     }
 
-    return generateMockHistory(7)
+    return null
   } catch (error) {
     console.warn('[market-history] error formatting data:', error.message)
-    return generateMockHistory(7)
+    return null
   }
-}
-
-/**
- * Generate realistic mock historical data
- */
-function generateMockHistory(days) {
-  const data = []
-  const today = new Date()
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-
-    // Create realistic volume trends with daily variation
-    const baseVolume = 1500000 * (0.7 + Math.random() * 0.6)
-    const variance = Math.sin(((days - i) / days) * Math.PI) * 0.3 + 0.7
-    const noise = (Math.random() - 0.5) * 0.2
-
-    data.push({
-      date: date.toISOString().split('T')[0],
-      dateDisplay: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      volume: Math.round(baseVolume * variance * (1 + noise)),
-      liquidity: Math.round(baseVolume * variance * (1 + noise) * 0.03),
-      trades: Math.round(100 + Math.random() * 500),
-      volatility: parseFloat((Math.random() * 50 + 10).toFixed(2))
-    })
-  }
-
-  return data
 }
 
 /**
@@ -109,9 +79,9 @@ export async function getPolymarketHistory(marketId) {
       { timeout: 8000 }
     )
     return response.data
-  } catch (error) {
-    console.warn('[polymarket-history] not available, using mock data')
-    return generateMockHistory(7)
+  } catch {
+    console.warn('[polymarket-history] not available')
+    return null
   }
 }
 
@@ -125,8 +95,8 @@ export async function getKalshiHistory(marketId) {
       timeout: 8000
     })
     return response.data
-  } catch (error) {
-    console.warn('[kalshi-history] not available, using mock data')
-    return generateMockHistory(7)
+  } catch {
+    console.warn('[kalshi-history] not available')
+    return null
   }
 }
