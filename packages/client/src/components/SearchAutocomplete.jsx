@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, TrendingUp } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 
 const POPULAR_QUERIES = [
   'Bitcoin price surge',
@@ -86,13 +86,6 @@ export function SearchAutocomplete({ value, onChange, onSelect, onFocus, onBlur 
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* Input wrapper for proper focus styling */}
-      <div className="relative">
-        {isOpen && (
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none rotate-180 opacity-60" />
-        )}
-      </div>
-
       {/* Dropdown Menu */}
       {isOpen && filtered.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card border border-border/60 rounded-xl shadow-lg overflow-hidden animate-in fade-in duration-150">
@@ -127,12 +120,6 @@ export function SearchAutocomplete({ value, onChange, onSelect, onFocus, onBlur 
         </div>
       )}
 
-      {/* Show dropdown indicator when empty */}
-      {!isOpen && filtered.length > 0 && value.trim().length === 0 && (
-        <div className="absolute right-0 top-0 h-full flex items-center pr-3 pointer-events-none">
-          <ChevronDown className="h-4 w-4 text-muted-foreground/60" />
-        </div>
-      )}
     </div>
   )
 }

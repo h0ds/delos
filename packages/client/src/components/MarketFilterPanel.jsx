@@ -59,7 +59,6 @@ export function MarketFilterPanel({ markets, onFilter, onReset }) {
           className="text-xs font-mono gap-1.5"
         >
           <Filter className="w-3 h-3" />
-          Filter Markets
           {hasActiveFilters && (
             <Badge variant="default" className="ml-1 h-5 px-1.5 text-xs">
               {selectedCategories.length + selectedStatus.length}

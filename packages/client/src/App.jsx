@@ -291,7 +291,7 @@ function App() {
                           value={query}
                           onChange={e => setQuery(e.target.value)}
                           placeholder="What are you looking for?"
-                          className="h-10 rounded-3xl pr-10 pl-2"
+                          className="h-10 rounded-3xl pr-10 pl-2 pt-1"
                           disabled={loading}
                           nativeInput
                           autoComplete="off"

@@ -403,8 +403,8 @@
     /* Shadow for elevation */
     @apply shadow-lg shadow-primary/30;
 
-    /* Hover state: lift + enhanced shadow */
-    @apply hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 hover:border-primary/60;
+    /* Hover state: enhanced shadow only (no lift effect) */
+    @apply hover:shadow-xl hover:shadow-primary/40 hover:border-primary/60;
 
     /* Overflow hidden for inner glow effect */
     @apply overflow-hidden;
@@ -420,8 +420,8 @@
     /* Shadow for subtle depth */
     @apply shadow-sm shadow-transparent;
 
-    /* Hover state */
-    @apply hover:bg-card/80 hover:border-border/80 hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5;
+    /* Hover state: enhanced shadow only (no lift effect) */
+    @apply hover:bg-card/80 hover:border-border/80 hover:shadow-md hover:shadow-primary/20;
 
     @apply overflow-hidden;
   }

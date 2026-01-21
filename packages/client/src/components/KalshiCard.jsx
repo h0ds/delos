@@ -76,9 +76,9 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
           <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {liveMarket.question}
           </h3>
-          {liveMarket.description && (
+          {/* {liveMarket.description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{liveMarket.description}</p>
-          )}
+          )} */}
         </div>
 
         {/* Probability Bars - Match Polymarket format */}
@@ -180,7 +180,7 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
               onQuickResearch(liveMarket.question)
             }}
             disabled={loading}
-            className="opacity-60 hover:opacity-100 transition-all duration-300 hover:scale-110 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="opacity-60 hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full p-1 hover:bg-primary/10 hover:border hover:border-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
             title="Research this market"
           >
             <OracleVisualization size={24} />
