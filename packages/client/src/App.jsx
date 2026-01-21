@@ -1,22 +1,18 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Terminal, Activity, AlertCircle } from 'lucide-react'
-import { socket } from '@/lib/socket'
-import { generateMockSignals } from '@/lib/mockData'
-import { perfMonitor } from '@/lib/performanceMonitor'
+import { Search, AlertCircle } from 'lucide-react'
 import { OracleHeader } from '@/components/OracleHeader'
 import { OracleVisualization } from '@/components/OracleVisualization'
 import { PolymarketCard } from '@/components/PolymarketCard'
 import { KalshiCard } from '@/components/KalshiCard'
-import { PolymarketIcon, KalshiIcon } from '@/components/MarketIcons'
 import { SignalsSidebar } from '@/components/SignalsSidebar'
 import { SearchAutocomplete } from '@/components/SearchAutocomplete'
-import { useDebounce } from '@/lib/useDebounce'
 import { MarketCardSkeleton } from '@/components/skeletons/MarketCardSkeleton'
 import { SignalListSkeleton } from '@/components/skeletons/SignalListSkeleton'
+import { useMarkets, useSignalSearch, usePageNavigation, useSocketConnection } from '@/hooks'
 
 // Lazy-loaded components for route-based code splitting
 const MarketDetailPage = lazy(() => import('@/components/MarketDetailPage'))
@@ -34,227 +30,93 @@ const LazyLoadFallback = () => (
 )
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home') // 'home', 'research', 'detail', or 'compare'
-  const [selectedMarket, setSelectedMarket] = useState(null)
-  const [comparisonMarket1, setComparisonMarket1] = useState(null)
-  const [comparisonMarket2, setComparisonMarket2] = useState(null)
   const [query, setQuery] = useState('')
-  const [signals, setSignals] = useState([])
-  const [markets, setMarkets] = useState([])
-  const [initialMarkets, setInitialMarkets] = useState([])
-  const [filteredMarkets, setFilteredMarkets] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [searchedQuery, setSearchedQuery] = useState('')
-  const [connected, setConnected] = useState(false)
-  const [dataQuality, setDataQuality] = useState(null)
 
-  // Fetch featured markets on mount
-  useEffect(() => {
-    const fetchFeaturedMarkets = async () => {
-      try {
-        const response = await fetch('http://localhost:3333/api/featured-markets')
-        const data = await response.json()
-        if (data.success && data.markets && data.markets.length > 0) {
-          setInitialMarkets(data.markets)
-          setMarkets(data.markets)
-          console.log('[markets] fetched via HTTP:', data.markets.length)
-        }
-      } catch (err) {
-        console.error('[markets] HTTP fetch failed:', err)
-      }
-    }
-
-    const fetchDataQuality = async () => {
-      try {
-        const response = await fetch('http://localhost:3333/api/data-quality')
-        const data = await response.json()
-        setDataQuality(data.aggregatedMetrics)
-      } catch (err) {
-        console.error('[data-quality] fetch failed:', err)
-      }
-    }
-
-    const timer = setTimeout(() => {
-      if (initialMarkets.length === 0) {
-        console.log('[markets] socket delivery timeout, fetching via HTTP')
-        fetchFeaturedMarkets()
-      }
-    }, 2000)
-
-    // Fetch data quality on mount
-    fetchDataQuality()
-
-    return () => clearTimeout(timer)
-  }, [initialMarkets.length])
+  // Use custom hooks for state management
+  const {
+    initialMarkets,
+    setInitialMarkets,
+    markets,
+    setMarkets,
+    dataQuality,
+    filteredMarkets,
+    setFilteredMarkets
+  } = useMarkets()
+  const {
+    signals,
+    setSignals,
+    searchedQuery,
+    setSearchedQuery,
+    loading,
+    setLoading,
+    error,
+    setError,
+    connected,
+    setConnected,
+    performSearch
+  } = useSignalSearch()
+  const {
+    currentPage,
+    setCurrentPage,
+    selectedMarket,
+    navigateToMarket,
+    navigateToHome,
+    comparisonMarket1,
+    comparisonMarket2,
+    navigateToComparison,
+    selectSecondMarketForComparison,
+    swapComparisonMarkets,
+    resetComparison
+  } = usePageNavigation()
 
   // Socket listeners
-  useEffect(() => {
-    const onConnect = () => {
+  useSocketConnection({
+    searchedQuery,
+    onConnect: () => {
       setConnected(true)
       setError(null)
-    }
-
-    const onDisconnect = () => {
-      setConnected(false)
-    }
-
-    const onSignals = data => {
+    },
+    onDisconnect: () => setConnected(false),
+    onSignals: data => {
       setSignals(data)
       setLoading(false)
-    }
-
-    const onScanStart = data => {
+    },
+    onScanStart: data => {
       setSearchedQuery(data.query)
       setLoading(true)
       setError(null)
-    }
-
-    const onScanComplete = () => {
-      setLoading(false)
-    }
-
-    const onError = data => {
+    },
+    onScanComplete: () => setLoading(false),
+    onError: data => {
       setError(data.message)
       setLoading(false)
-    }
-
-    const onMarkets = data => {
-      console.log('[markets] received', data.length, 'markets from server')
+    },
+    onMarkets: data => {
       setMarkets(data)
       if (!searchedQuery) {
         setInitialMarkets(data)
       }
     }
-
-    socket.on('connect', onConnect)
-    socket.on('disconnect', onDisconnect)
-    socket.on('signals', onSignals)
-    socket.on('scan:start', onScanStart)
-    socket.on('scan:complete', onScanComplete)
-    socket.on('error', onError)
-    socket.on('oracle:markets', onMarkets)
-
-    return () => {
-      socket.off('connect', onConnect)
-      socket.off('disconnect', onDisconnect)
-      socket.off('signals', onSignals)
-      socket.off('scan:start', onScanStart)
-      socket.off('scan:complete', onScanComplete)
-      socket.off('error', onError)
-      socket.off('oracle:markets', onMarkets)
-    }
-  }, [searchedQuery])
-
-  const fetchSignalsFromAPI = async queryText => {
-    try {
-      console.log(`[api] fetching signals for: "${queryText}"`)
-      const response = await fetch(
-        `http://localhost:3333/api/signals/${encodeURIComponent(queryText)}`
-      )
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-      const data = await response.json()
-      if (data.success) {
-        setSignals(data.signals || [])
-        setMarkets(data.relatedMarkets || [])
-        setError(null)
-        return true
-      }
-    } catch (err) {
-      console.warn('[api] failed to fetch signals:', err)
-      return false
-    }
-    return false
-  }
+  })
 
   const handleSearch = e => {
     e.preventDefault()
-    setCurrentPage('research') // Navigate to research page
+    setCurrentPage('research')
     const trimmedQuery = query.trim()
 
     if (!trimmedQuery) {
-      const mockSignals = generateMockSignals('Bitcoin', 25)
-      setSignals(mockSignals)
-      setSearchedQuery('Bitcoin')
-      setLoading(false)
+      performSearch('Bitcoin')
       setQuery('')
       return
     }
 
-    setLoading(true)
-    setSearchedQuery(trimmedQuery)
-
-    // Try REST API first, fallback to WebSocket, then mock data
-    fetchSignalsFromAPI(trimmedQuery).then(success => {
-      if (!success && connected) {
-        // Fallback to WebSocket
-        socket.emit('signal:query', trimmedQuery)
-      } else if (!success) {
-        // Fallback to mock data
-        const mockSignals = generateMockSignals(trimmedQuery, 25)
-        setSignals(mockSignals)
-        setLoading(false)
-      }
-    })
-
+    performSearch(trimmedQuery)
     setQuery('')
   }
 
   const handleQuickResearch = queryText => {
-    setLoading(true)
-    setSearchedQuery(queryText)
     setCurrentPage('research')
-
-    // Try REST API first, fallback to WebSocket, then mock data
-    fetchSignalsFromAPI(queryText).then(success => {
-      if (!success && connected) {
-        // Fallback to WebSocket
-        socket.emit('signal:query', queryText)
-      } else if (!success) {
-        // Fallback to mock data
-        const mockSignals = generateMockSignals(queryText, 25)
-        setSignals(mockSignals)
-        setLoading(false)
-      }
-    })
-  }
-
-  const handleMarketSelect = market => {
-    perfMonitor.trackNavigation(currentPage, 'detail')()
-    setSelectedMarket(market)
-    setCurrentPage('detail')
-  }
-
-  const handleBackFromDetail = () => {
-    perfMonitor.trackNavigation('detail', 'home')()
-    setSelectedMarket(null)
-    setCurrentPage('home')
-  }
-
-  const handleStartComparison = market => {
-    perfMonitor.trackNavigation(currentPage, 'compare')()
-    setComparisonMarket1(market)
-    setComparisonMarket2(null)
-    setCurrentPage('compare')
-  }
-
-  const handleSelectSecondMarket = market => {
-    if (comparisonMarket1?.market !== market.market) {
-      setComparisonMarket2(market)
-    }
-  }
-
-  const handleBackFromComparison = () => {
-    setComparisonMarket1(null)
-    setComparisonMarket2(null)
-    setCurrentPage('home')
-  }
-
-  const handleSwapComparisonMarkets = () => {
-    const temp = comparisonMarket1
-    setComparisonMarket1(comparisonMarket2)
-    setComparisonMarket2(temp)
+    performSearch(queryText)
   }
 
   return (
@@ -265,7 +127,7 @@ function App() {
       <OracleHeader
         connected={connected}
         isResearching={loading}
-        onHeaderClick={() => setCurrentPage('home')}
+        onHeaderClick={navigateToHome}
         currentPage={currentPage}
       />
 
@@ -279,8 +141,8 @@ function App() {
                 <MarketComparisonPage
                   market1={comparisonMarket1}
                   market2={comparisonMarket2}
-                  onBack={handleBackFromComparison}
-                  onSwap={handleSwapComparisonMarkets}
+                  onBack={resetComparison}
+                  onSwap={swapComparisonMarkets}
                 />
               </div>
             </Suspense>
@@ -289,11 +151,11 @@ function App() {
               <div key="detail-content" className="animate-flip-in">
                 <MarketDetailPage
                   market={selectedMarket}
-                  onBack={handleBackFromDetail}
+                  onBack={navigateToHome}
                   onQuickResearch={handleQuickResearch}
-                  onCompare={handleStartComparison}
+                  onCompare={navigateToComparison}
                   allMarkets={initialMarkets}
-                  onSelectMarket={handleMarketSelect}
+                  onSelectMarket={navigateToMarket}
                   relatedSignals={signals}
                 />
               </div>
@@ -418,7 +280,7 @@ function App() {
                                   <PolymarketCard
                                     market={market}
                                     onQuickResearch={handleQuickResearch}
-                                    onSelectMarket={handleMarketSelect}
+                                    onSelectMarket={navigateToMarket}
                                     loading={loading}
                                   />
                                 </div>
@@ -460,7 +322,7 @@ function App() {
                                   <KalshiCard
                                     market={market}
                                     onQuickResearch={handleQuickResearch}
-                                    onSelectMarket={handleMarketSelect}
+                                    onSelectMarket={navigateToMarket}
                                     loading={loading}
                                   />
                                 </div>
