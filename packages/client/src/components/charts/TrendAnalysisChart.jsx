@@ -100,32 +100,8 @@ export function TrendAnalysisChart({
 
   const sourceStyle = sourceColors[source] || sourceColors.polymarket
 
-  /**
-   * Compact Metric Component - No padding, no borders, minimal spacing
-   */
-  const MetricCell = ({ label, value, badge, highlight = false }) => {
-    const displayValue = typeof value === 'function' ? value() : value
-
-    // Don't render if value is null (invalid data)
-    if (displayValue === null && !badge) return null
-
-    return (
-      <div className="space-y-0.5">
-        <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight">{label}</p>
-        {displayValue !== null && (
-          <p
-            className={`text-sm font-semibold font-mono ${highlight ? 'text-primary' : 'text-foreground'}`}
-          >
-            {displayValue}
-          </p>
-        )}
-        {badge && <div>{badge}</div>}
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Header with Source Badge Button */}
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Trend Analysis</h2>
@@ -151,153 +127,206 @@ export function TrendAnalysisChart({
         </div>
       </div>
 
-      {/* Price Metrics - 4 columns, compact */}
-      <div className="grid grid-cols-4 gap-2 text-xs">
-        <MetricCell
-          label="Current"
-          value={() => validateNumber(priceHistory[priceHistory.length - 1]?.value, 4)}
-          highlight
-        />
-        <MetricCell
-          label="Predicted 24h"
-          value={() => validateNumber(prediction24h.predictedValue, 4)}
-          highlight
-        />
-        <MetricCell
-          label="Change"
-          value={() => validatePercent(prediction24h.changePercent, 2)}
-          highlight={prediction24h.changePercent > 0}
-        />
-        <MetricCell
-          label="Confidence"
-          badge={<BadgeUnified type={confidenceBadgeType} label="" showIcon />}
-          value={() => validatePercent(prediction24h.confidence, 0)}
-        />
-      </div>
-
-      {/* Support & Resistance - Compact 2 columns */}
-      {prediction24h.supportLevel && prediction24h.resistanceLevel && (
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
-              Support
-            </p>
-            <p className="text-sm font-semibold font-mono text-bullish">
-              {validateNumber(prediction24h.supportLevel, 4)}
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
-              Resistance
-            </p>
-            <p className="text-sm font-semibold font-mono text-bearish">
-              {validateNumber(prediction24h.resistanceLevel, 4)}
-            </p>
-          </div>
+      {/* ===== BENTO GRID LAYOUT ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-max">
+        {/* CURRENT PRICE - Large */}
+        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+            Current Price
+          </p>
+          <p className="text-2xl font-semibold font-mono text-primary">
+            {validateNumber(priceHistory[priceHistory.length - 1]?.value, 4)}
+          </p>
         </div>
-      )}
 
-      {/* Candlestick Chart (Professional OHLC) */}
-      <CandlestickChart data={candleData} title="Price Action" />
-
-      {/* Sentiment Alignment Alert - Compact */}
-      {sentimentDirection !== 'neutral' && (
-        <div className={`rounded-lg p-3 ${sourceStyle.bg}`}>
-          <div className="flex items-start gap-2.5">
-            {sentimentDirection === 'aligned' ? (
-              <>
-                <CheckCircle className="w-4 h-4 text-bullish mt-0.5 flex-shrink-0" />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-semibold text-bullish">Sentiment & Price Aligned</p>
-                  <p className="text-xs text-muted-foreground">
-                    Market sentiment aligns with price action.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-4 h-4 text-bearish mt-0.5 flex-shrink-0" />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-semibold text-bearish">Sentiment & Price Diverging</p>
-                  <p className="text-xs text-muted-foreground">
-                    Market sentiment diverges from price movement.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
+        {/* PREDICTED 24H - Large */}
+        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+            Predicted 24h
+          </p>
+          <p className="text-2xl font-semibold font-mono text-primary">
+            {validateNumber(prediction24h.predictedValue, 4)}
+          </p>
         </div>
-      )}
 
-      {/* Sentiment Metrics - 3 compact columns */}
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <Tooltip text="Overall sentiment score from market signals: -1 (bearish) to +1 (bullish)">
-          <MetricCell
-            label="Sentiment"
-            value={() => validateNumber(sentimentScore, 2)}
-            badge={<BadgeUnified type={sentimentBadgeType} label="" showIcon />}
-            highlight
-          />
-        </Tooltip>
-        {validateNumber(priceCorrelation, 3) !== null && (
-          <Tooltip text="Price movement correlated with sentiment: 0 (no correlation) to 1 (perfect)">
-            <MetricCell label="Correlation" value={() => validateNumber(priceCorrelation, 3)} />
-          </Tooltip>
+        {/* CHANGE % - Medium */}
+        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+            24h Change
+          </p>
+          <p
+            className={`text-xl font-semibold font-mono ${
+              prediction24h.changePercent > 0 ? 'text-bullish' : 'text-bearish'
+            }`}
+          >
+            {prediction24h.changePercent > 0 ? '+' : ''}
+            {validatePercent(prediction24h.changePercent, 2)}
+          </p>
+        </div>
+
+        {/* CONFIDENCE - Medium */}
+        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2 flex items-center gap-2">
+            Confidence
+            <BadgeUnified type={confidenceBadgeType} label="" showIcon />
+          </p>
+          <p className="text-xl font-semibold font-mono text-primary">
+            {validatePercent(prediction24h.confidence, 0)}
+          </p>
+        </div>
+
+        {/* CANDLESTICK CHART - Takes up 2-3 cols */}
+        <div className="md:col-span-2 lg:col-span-2 bg-card/50 rounded-lg p-4 border border-border/40">
+          <CandlestickChart data={candleData} title="Price Action (7 Periods)" />
+        </div>
+
+        {/* SUPPORT & RESISTANCE - Right side, stacked */}
+        {prediction24h.supportLevel && prediction24h.resistanceLevel && (
+          <>
+            <div className="bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+                Support
+              </p>
+              <p className="text-xl font-semibold font-mono text-bullish">
+                {validateNumber(prediction24h.supportLevel, 4)}
+              </p>
+            </div>
+            <div className="bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
+              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+                Resistance
+              </p>
+              <p className="text-xl font-semibold font-mono text-bearish">
+                {validateNumber(prediction24h.resistanceLevel, 4)}
+              </p>
+            </div>
+          </>
         )}
-        {validatePercent(predictiveValue, 0) !== null && (
-          <Tooltip text="Confidence that sentiment correctly predicts price direction: 0-100%">
-            <MetricCell label="Predictive" value={() => validatePercent(predictiveValue, 0)} />
-          </Tooltip>
-        )}
-      </div>
 
-      {/* Volatility - Compact inline */}
-      <div className={`rounded-lg p-3 ${sourceStyle.bg}`}>
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <Tooltip text="Expected price fluctuation: higher % = more volatile market">
-            <p className="text-sm font-semibold cursor-help">Volatility</p>
-          </Tooltip>
-          <BadgeUnified type={volatilityBadgeType} label="" showIcon />
+        {/* VOLATILITY - Full width badge style */}
+        <div
+          className={`md:col-span-2 lg:col-span-4 rounded-lg p-4 ${sourceStyle.bg} border border-border/40`}
+        >
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <Tooltip text="Expected price fluctuation: higher % = more volatile market">
+              <p className="text-sm font-semibold cursor-help">Volatility Analysis</p>
+            </Tooltip>
+            <BadgeUnified type={volatilityBadgeType} label="" showIcon />
+          </div>
+          <div className="w-full h-2 bg-border/40 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-500"
+              style={{ width: `${Math.min(100, (analytics.volatility || 0) * 2)}%` }}
+            />
+          </div>
+          <p className="text-xs font-mono text-primary mt-2">
+            {validatePercent(analytics.volatility, 2)}
+          </p>
         </div>
-        <div className="w-full h-1.5 bg-border/30 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all"
-            style={{ width: `${Math.min(100, (analytics.volatility || 0) * 2)}%` }}
-          />
-        </div>
-        <p className="text-xs font-mono text-primary mt-1">
-          {validatePercent(analytics.volatility, 2)}
-        </p>
-      </div>
 
-      {/* Time-based Changes - 3 compact columns */}
-      {analytics.changeMetrics && (
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          {['1h', '24h', '7d'].map((label, idx) => {
-            const keys = ['change1h', 'change24h', 'change7d']
-            const value = analytics.changeMetrics?.[keys[idx]] || 0
-            const validated = validatePercent(value, 2)
+        {/* TIME CHANGES - Compact 3-column grid */}
+        {analytics.changeMetrics && (
+          <div className="md:col-span-2 lg:col-span-2 grid grid-cols-3 gap-2">
+            {['1h', '24h', '7d'].map((label, idx) => {
+              const keys = ['change1h', 'change24h', 'change7d']
+              const value = analytics.changeMetrics?.[keys[idx]] || 0
+              const validated = validatePercent(value, 2)
 
-            if (validated === null) return null
+              if (validated === null) return null
 
-            return (
-              <div key={label} className="text-center">
-                <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">
-                  {label}
-                </p>
-                <p
-                  className={`text-sm font-semibold font-mono ${
-                    value > 0 ? 'text-bullish' : 'text-bearish'
-                  }`}
+              return (
+                <div
+                  key={label}
+                  className="bg-card/50 rounded-lg p-3 border border-border/40 text-center hover:border-primary/30 transition-colors"
                 >
-                  {value > 0 ? '+' : ''}
-                  {validated}
+                  <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+                    {label}
+                  </p>
+                  <p
+                    className={`text-lg font-semibold font-mono ${
+                      value > 0 ? 'text-bullish' : 'text-bearish'
+                    }`}
+                  >
+                    {value > 0 ? '+' : ''}
+                    {validated}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* SENTIMENT METRICS - 3-column grid */}
+        <div className="md:col-span-2 lg:col-span-2 grid grid-cols-3 gap-2">
+          <Tooltip text="Overall sentiment score from market signals: -1 (bearish) to +1 (bullish)">
+            <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
+              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+                Sentiment
+              </p>
+              <p className="text-lg font-semibold font-mono text-primary mb-1">
+                {validateNumber(sentimentScore, 2)}
+              </p>
+              <BadgeUnified type={sentimentBadgeType} label="" showIcon />
+            </div>
+          </Tooltip>
+          {validateNumber(priceCorrelation, 3) !== null && (
+            <Tooltip text="Price movement correlated with sentiment: 0 (no correlation) to 1 (perfect)">
+              <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+                  Correlation
+                </p>
+                <p className="text-lg font-semibold font-mono text-foreground">
+                  {validateNumber(priceCorrelation, 3)}
                 </p>
               </div>
-            )
-          })}
+            </Tooltip>
+          )}
+          {validatePercent(predictiveValue, 0) !== null && (
+            <Tooltip text="Confidence that sentiment correctly predicts price direction: 0-100%">
+              <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+                  Predictive
+                </p>
+                <p className="text-lg font-semibold font-mono text-foreground">
+                  {validatePercent(predictiveValue, 0)}
+                </p>
+              </div>
+            </Tooltip>
+          )}
         </div>
-      )}
+
+        {/* SENTIMENT ALIGNMENT - Full width */}
+        {sentimentDirection !== 'neutral' && (
+          <div
+            className={`md:col-span-2 lg:col-span-4 rounded-lg p-4 ${sourceStyle.bg} border border-border/40`}
+          >
+            <div className="flex items-start gap-2.5">
+              {sentimentDirection === 'aligned' ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-bullish mt-0.5 flex-shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-bullish">Sentiment & Price Aligned</p>
+                    <p className="text-xs text-muted-foreground">
+                      Market sentiment aligns with price action.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-bearish mt-0.5 flex-shrink-0" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-bearish">
+                      Sentiment & Price Diverging
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Market sentiment diverges from price movement.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

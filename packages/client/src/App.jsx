@@ -340,7 +340,7 @@ function App() {
                     </form>
                   </div>
 
-                  {/* Markets Grid - Split by Source */}
+                  {/* Market Grid - Flexible Bento Layout */}
                   {initialMarkets && initialMarkets.length > 0 && (
                     <div className="space-y-6 animate-fade-in-slow">
                       {/* Header with Data Quality */}
@@ -390,11 +390,11 @@ function App() {
                         <div className="flex items-center gap-2 px-1">
                           <Badge variant="outline">Polymarket</Badge>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-max">
                           {initialMarkets.length === 0 ? (
                             // Show skeleton loaders while loading
                             <>
-                              {[1, 2, 3, 4].map(i => (
+                              {[1, 2, 3].map(i => (
                                 <div
                                   key={`poly-skeleton-${i}`}
                                   className="stagger-item"
@@ -408,7 +408,7 @@ function App() {
                             // Show actual market cards
                             (filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
                               .filter(m => m.source === 'polymarket' || !m.source)
-                              .slice(0, 4)
+                              .slice(0, 3)
                               .map((market, i) => (
                                 <div
                                   key={`poly-${i}`}
@@ -429,12 +429,14 @@ function App() {
 
                       {/* Kalshi Section */}
                       <div className="space-y-3">
-                        <Badge variant="outline">Kalshi</Badge>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        <div className="flex items-center gap-2 px-1">
+                          <Badge variant="outline">Kalshi</Badge>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-max">
                           {initialMarkets.length === 0 ? (
                             // Show skeleton loaders while loading
                             <>
-                              {[1, 2, 3, 4].map(i => (
+                              {[1, 2, 3].map(i => (
                                 <div
                                   key={`kalshi-skeleton-${i}`}
                                   className="stagger-item"
@@ -448,7 +450,7 @@ function App() {
                             // Show actual market cards
                             (filteredMarkets.length > 0 ? filteredMarkets : initialMarkets)
                               .filter(m => m.source === 'kalshi')
-                              .slice(0, 4)
+                              .slice(0, 3)
                               .map((market, i) => (
                                 <div
                                   key={`kalshi-${i}`}
