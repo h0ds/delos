@@ -1,5 +1,7 @@
+import { formatNumber, formatPrice, formatLargeNumber, formatPercent } from '@/lib/formatters'
+
 /**
- * Professional candlestick chart visualization (data-dense, no borders)
+ * Professional candlestick chart visualization (proper spacing, beautiful formatting)
  * Shows OHLC data for financial analysis
  */
 export function CandlestickChart({ data, title = 'Price Action' }) {
@@ -49,15 +51,15 @@ export function CandlestickChart({ data, title = 'Price Action' }) {
   const changePercent = ((lastCandle.close - firstCandle.open) / firstCandle.open) * 100
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold">{title}</p>
         <p className="text-xs text-muted-foreground font-mono">{candles.length} periods</p>
       </div>
 
-      {/* SVG Candlestick Chart - No border */}
-      <div className="w-full h-28 bg-muted/5 rounded-lg p-2">
+      {/* SVG Candlestick Chart */}
+      <div className="w-full h-40 bg-muted/5 rounded-lg p-3">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="bullishGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -128,59 +130,82 @@ export function CandlestickChart({ data, title = 'Price Action' }) {
         </svg>
       </div>
 
-      {/* Condensed Statistics - 4 columns, no borders */}
-      <div className="grid grid-cols-4 gap-2 text-xs">
-        {/* Open */}
-        <div className="text-center">
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Open</p>
-          <p className="text-sm font-semibold font-mono text-primary">
-            {firstCandle.open.toFixed(4)}
-          </p>
-        </div>
+      {/* OHLC Statistics - Clean grid */}
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">OHLC Data</p>
+        <div className="grid grid-cols-4 gap-3">
+          {/* Open */}
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Open
+            </p>
+            <p className="text-sm font-semibold font-mono text-primary">
+              {formatPrice(firstCandle.open)}
+            </p>
+          </div>
 
-        {/* High */}
-        <div className="text-center">
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">High</p>
-          <p className="text-sm font-semibold font-mono text-bullish">{highestHigh.toFixed(4)}</p>
-        </div>
+          {/* High */}
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              High
+            </p>
+            <p className="text-sm font-semibold font-mono text-bullish">
+              {formatPrice(highestHigh)}
+            </p>
+          </div>
 
-        {/* Low */}
-        <div className="text-center">
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Low</p>
-          <p className="text-sm font-semibold font-mono text-bearish">{lowestLow.toFixed(4)}</p>
-        </div>
+          {/* Low */}
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Low
+            </p>
+            <p className="text-sm font-semibold font-mono text-bearish">{formatPrice(lowestLow)}</p>
+          </div>
 
-        {/* Close */}
-        <div className="text-center">
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Close</p>
-          <p className="text-sm font-semibold font-mono text-primary">
-            {lastCandle.close.toFixed(4)}
-          </p>
+          {/* Close */}
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Close
+            </p>
+            <p className="text-sm font-semibold font-mono text-primary">
+              {formatPrice(lastCandle.close)}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Secondary Metrics - 3 columns, no borders */}
-      <div className="grid grid-cols-3 gap-2 text-xs text-center">
-        <div>
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Volume</p>
-          <p className="text-sm font-semibold font-mono text-muted-foreground">
-            {(avgVolume / 1000).toFixed(0)}K
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Range</p>
-          <p className="text-sm font-semibold font-mono text-muted-foreground">
-            {priceRange.toFixed(4)}
-          </p>
-        </div>
-        <div>
-          <p className="text-muted-foreground font-mono uppercase tracking-tight mb-0.5">Change</p>
-          <p
-            className={`text-sm font-semibold font-mono ${changePercent >= 0 ? 'text-bullish' : 'text-bearish'}`}
-          >
-            {changePercent >= 0 ? '+' : ''}
-            {changePercent.toFixed(2)}%
-          </p>
+      {/* Secondary Metrics - Volume, Range, Change */}
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">
+          Additional Metrics
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Avg Volume
+            </p>
+            <p className="text-sm font-semibold font-mono text-muted-foreground">
+              {formatVolume(avgVolume)}
+            </p>
+          </div>
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Range
+            </p>
+            <p className="text-sm font-semibold font-mono text-muted-foreground">
+              {formatPrice(priceRange)}
+            </p>
+          </div>
+          <div className="bg-card/50 rounded-lg p-3 border border-border/40 text-center">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              Total Change
+            </p>
+            <p
+              className={`text-sm font-semibold font-mono ${changePercent >= 0 ? 'text-bullish' : 'text-bearish'}`}
+            >
+              {formatPercent(changePercent, 1)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

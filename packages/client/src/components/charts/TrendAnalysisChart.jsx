@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react'
 import { CandlestickChart } from './CandlestickChart'
 import { Tooltip } from '@/components/ui/tooltip'
 import {
@@ -8,24 +8,15 @@ import {
   getVolatilityBadgeType,
   getConfidenceBadgeType
 } from '@/lib/badgeSystem'
-
-/**
- * Utility function to validate numeric data
- * Returns null if value is NaN, undefined, or invalid
- */
-const validateNumber = (value, decimals = 2) => {
-  if (value === null || value === undefined || isNaN(value)) return null
-  return Number(value).toFixed(decimals)
-}
-
-/**
- * Utility function to validate percentage
- * Returns null if value is NaN, undefined, or invalid
- */
-const validatePercent = (value, decimals = 2) => {
-  const validated = validateNumber(value, decimals)
-  return validated ? `${validated}%` : null
-}
+import {
+  formatNumber,
+  formatPercent,
+  formatPrice,
+  formatVolume,
+  formatConfidence,
+  formatCorrelation,
+  formatSentiment
+} from '@/lib/formatters'
 
 /**
  * Data-dense trend analysis visualization (no unnecessary borders/padding)
@@ -101,12 +92,12 @@ export function TrendAnalysisChart({
   const sourceStyle = sourceColors[source] || sourceColors.polymarket
 
   return (
-    <div className="space-y-4">
-      {/* Header with Source Badge Button */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-6">
+      {/* Header - Clean section title with badges */}
+      <div className="flex items-center justify-between gap-4">
         <h2 className="text-lg font-semibold">Trend Analysis</h2>
         <div className="flex gap-2 items-center">
-          {/* Source Badge - Prominent Button Style */}
+          {/* Source Badge */}
           <button
             disabled
             className={`text-xs font-mono px-3 py-1.5 rounded-squircle font-semibold uppercase tracking-wide ${sourceStyle.button} transition-colors cursor-default`}
@@ -127,206 +118,213 @@ export function TrendAnalysisChart({
         </div>
       </div>
 
-      {/* ===== BENTO GRID LAYOUT ===== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-max">
-        {/* CURRENT PRICE - Large */}
-        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+      {/* ===== PRICE OVERVIEW (4 KPI Cards) ===== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Current Price */}
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
             Current Price
           </p>
-          <p className="text-2xl font-semibold font-mono text-primary">
-            {validateNumber(priceHistory[priceHistory.length - 1]?.value, 4)}
+          <p className="text-3xl font-semibold font-mono text-primary">
+            {formatPrice(priceHistory[priceHistory.length - 1]?.value)}
           </p>
         </div>
 
-        {/* PREDICTED 24H - Large */}
-        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+        {/* Predicted 24h */}
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
             Predicted 24h
           </p>
-          <p className="text-2xl font-semibold font-mono text-primary">
-            {validateNumber(prediction24h.predictedValue, 4)}
+          <p className="text-3xl font-semibold font-mono text-primary">
+            {formatPrice(prediction24h.predictedValue)}
           </p>
         </div>
 
-        {/* CHANGE % - Medium */}
-        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
+        {/* 24h Change */}
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
             24h Change
           </p>
           <p
-            className={`text-xl font-semibold font-mono ${
+            className={`text-3xl font-semibold font-mono ${
               prediction24h.changePercent > 0 ? 'text-bullish' : 'text-bearish'
             }`}
           >
-            {prediction24h.changePercent > 0 ? '+' : ''}
-            {validatePercent(prediction24h.changePercent, 2)}
+            {formatPercent(prediction24h.changePercent, 1)}
           </p>
         </div>
 
-        {/* CONFIDENCE - Medium */}
-        <div className="lg:col-span-1 bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-          <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2 flex items-center gap-2">
-            Confidence
+        {/* Confidence */}
+        <div className="bg-card rounded-lg p-5 border border-border/60">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">
+              Confidence
+            </p>
             <BadgeUnified type={confidenceBadgeType} label="" showIcon />
-          </p>
-          <p className="text-xl font-semibold font-mono text-primary">
-            {validatePercent(prediction24h.confidence, 0)}
-          </p>
-        </div>
-
-        {/* CANDLESTICK CHART - Takes up 2-3 cols */}
-        <div className="md:col-span-2 lg:col-span-2 bg-card/50 rounded-lg p-4 border border-border/40">
-          <CandlestickChart data={candleData} title="Price Action (7 Periods)" />
-        </div>
-
-        {/* SUPPORT & RESISTANCE - Right side, stacked */}
-        {prediction24h.supportLevel && prediction24h.resistanceLevel && (
-          <>
-            <div className="bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
-                Support
-              </p>
-              <p className="text-xl font-semibold font-mono text-bullish">
-                {validateNumber(prediction24h.supportLevel, 4)}
-              </p>
-            </div>
-            <div className="bg-card/50 rounded-lg p-4 border border-border/40 hover:border-primary/30 transition-colors">
-              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
-                Resistance
-              </p>
-              <p className="text-xl font-semibold font-mono text-bearish">
-                {validateNumber(prediction24h.resistanceLevel, 4)}
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* VOLATILITY - Full width badge style */}
-        <div
-          className={`md:col-span-2 lg:col-span-4 rounded-lg p-4 ${sourceStyle.bg} border border-border/40`}
-        >
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <Tooltip text="Expected price fluctuation: higher % = more volatile market">
-              <p className="text-sm font-semibold cursor-help">Volatility Analysis</p>
-            </Tooltip>
-            <BadgeUnified type={volatilityBadgeType} label="" showIcon />
           </div>
-          <div className="w-full h-2 bg-border/40 rounded-full overflow-hidden">
+          <p className="text-3xl font-semibold font-mono text-primary">
+            {formatConfidence(prediction24h.confidence)}
+          </p>
+        </div>
+      </div>
+
+      {/* ===== CANDLESTICK CHART ===== */}
+      <div className="bg-card rounded-lg p-5 border border-border/60">
+        <CandlestickChart data={candleData} title="Price Action (7 Periods)" />
+      </div>
+
+      {/* ===== SUPPORT & RESISTANCE ===== */}
+      {prediction24h.supportLevel && prediction24h.resistanceLevel && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-card rounded-lg p-5 border border-border/60">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-3">
+              Support Level
+            </p>
+            <p className="text-2xl font-semibold font-mono text-bullish">
+              {formatPrice(prediction24h.supportLevel)}
+            </p>
+          </div>
+          <div className="bg-card rounded-lg p-5 border border-border/60">
+            <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-3">
+              Resistance Level
+            </p>
+            <p className="text-2xl font-semibold font-mono text-bearish">
+              {formatPrice(prediction24h.resistanceLevel)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ===== VOLATILITY ANALYSIS ===== */}
+      <div className={`rounded-lg p-5 ${sourceStyle.bg} border border-border/40`}>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <Tooltip text="Expected price fluctuation: higher % = more volatile market">
+            <p className="text-sm font-semibold cursor-help">Volatility Analysis</p>
+          </Tooltip>
+          <BadgeUnified type={volatilityBadgeType} label="" showIcon />
+        </div>
+        <div className="space-y-2">
+          <div className="w-full h-3 bg-border/40 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-primary/60 to-primary transition-all duration-500"
               style={{ width: `${Math.min(100, (analytics.volatility || 0) * 2)}%` }}
             />
           </div>
-          <p className="text-xs font-mono text-primary mt-2">
-            {validatePercent(analytics.volatility, 2)}
-          </p>
+          <p className="text-sm font-mono text-primary">{formatVolatility(analytics.volatility)}</p>
         </div>
+      </div>
 
-        {/* TIME CHANGES - Compact 3-column grid */}
-        {analytics.changeMetrics && (
-          <div className="md:col-span-2 lg:col-span-2 grid grid-cols-3 gap-2">
+      {/* ===== TIME-BASED CHANGES ===== */}
+      {analytics.changeMetrics && (
+        <div>
+          <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-3">
+            Price Changes Over Time
+          </p>
+          <div className="grid grid-cols-3 gap-4">
             {['1h', '24h', '7d'].map((label, idx) => {
               const keys = ['change1h', 'change24h', 'change7d']
               const value = analytics.changeMetrics?.[keys[idx]] || 0
-              const validated = validatePercent(value, 2)
-
-              if (validated === null) return null
 
               return (
                 <div
                   key={label}
-                  className="bg-card/50 rounded-lg p-3 border border-border/40 text-center hover:border-primary/30 transition-colors"
+                  className="bg-card rounded-lg p-4 border border-border/60 text-center"
                 >
-                  <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+                  <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
                     {label}
                   </p>
                   <p
-                    className={`text-lg font-semibold font-mono ${
+                    className={`text-xl font-semibold font-mono ${
                       value > 0 ? 'text-bullish' : 'text-bearish'
                     }`}
                   >
-                    {value > 0 ? '+' : ''}
-                    {validated}
+                    {formatPercent(value, 1)}
                   </p>
                 </div>
               )
             })}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* SENTIMENT METRICS - 3-column grid */}
-        <div className="md:col-span-2 lg:col-span-2 grid grid-cols-3 gap-2">
+      {/* ===== SENTIMENT METRICS ===== */}
+      <div>
+        <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-3">
+          Sentiment Analysis
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Tooltip text="Overall sentiment score from market signals: -1 (bearish) to +1 (bullish)">
-            <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
-              <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-2">
-                Sentiment
+            <div className="bg-card rounded-lg p-4 border border-border/60 cursor-help">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide">
+                  Sentiment
+                </p>
+                <BadgeUnified type={sentimentBadgeType} label="" showIcon />
+              </div>
+              <p className="text-xl font-semibold font-mono text-primary">
+                {formatSentiment(sentimentScore)}
               </p>
-              <p className="text-lg font-semibold font-mono text-primary mb-1">
-                {validateNumber(sentimentScore, 2)}
-              </p>
-              <BadgeUnified type={sentimentBadgeType} label="" showIcon />
             </div>
           </Tooltip>
-          {validateNumber(priceCorrelation, 3) !== null && (
+
+          {priceCorrelation !== 0 && (
             <Tooltip text="Price movement correlated with sentiment: 0 (no correlation) to 1 (perfect)">
-              <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              <div className="bg-card rounded-lg p-4 border border-border/60 cursor-help">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
                   Correlation
                 </p>
-                <p className="text-lg font-semibold font-mono text-foreground">
-                  {validateNumber(priceCorrelation, 3)}
+                <p className="text-xl font-semibold font-mono text-foreground">
+                  {formatCorrelation(priceCorrelation)}
                 </p>
               </div>
             </Tooltip>
           )}
-          {validatePercent(predictiveValue, 0) !== null && (
+
+          {predictiveValue !== 0 && (
             <Tooltip text="Confidence that sentiment correctly predicts price direction: 0-100%">
-              <div className="bg-card/50 rounded-lg p-3 border border-border/40 hover:border-primary/30 transition-colors cursor-help">
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-tight mb-1">
+              <div className="bg-card rounded-lg p-4 border border-border/60 cursor-help">
+                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wide mb-2">
                   Predictive
                 </p>
-                <p className="text-lg font-semibold font-mono text-foreground">
-                  {validatePercent(predictiveValue, 0)}
+                <p className="text-xl font-semibold font-mono text-foreground">
+                  {formatPercent(predictiveValue, 0)}
                 </p>
               </div>
             </Tooltip>
           )}
         </div>
-
-        {/* SENTIMENT ALIGNMENT - Full width */}
-        {sentimentDirection !== 'neutral' && (
-          <div
-            className={`md:col-span-2 lg:col-span-4 rounded-lg p-4 ${sourceStyle.bg} border border-border/40`}
-          >
-            <div className="flex items-start gap-2.5">
-              {sentimentDirection === 'aligned' ? (
-                <>
-                  <CheckCircle className="w-4 h-4 text-bullish mt-0.5 flex-shrink-0" />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-semibold text-bullish">Sentiment & Price Aligned</p>
-                    <p className="text-xs text-muted-foreground">
-                      Market sentiment aligns with price action.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="w-4 h-4 text-bearish mt-0.5 flex-shrink-0" />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-semibold text-bearish">
-                      Sentiment & Price Diverging
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Market sentiment diverges from price movement.
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* ===== SENTIMENT ALIGNMENT STATUS ===== */}
+      {sentimentDirection !== 'neutral' && (
+        <div className={`rounded-lg p-5 ${sourceStyle.bg} border border-border/40`}>
+          <div className="flex items-start gap-3">
+            {sentimentDirection === 'aligned' ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-bullish mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-bullish">Sentiment & Price Aligned</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Market sentiment aligns with price action — bullish signals confirmed by
+                    movement.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-5 h-5 text-bearish mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-bearish">Sentiment & Price Diverging</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Market sentiment diverges from price movement — potential reversal or
+                    volatility.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
