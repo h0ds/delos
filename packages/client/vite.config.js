@@ -20,20 +20,20 @@ export default defineConfig({
           'vendor-ui': ['lucide-react'],
           // Feature chunks
           'chunk-markets': [
-            './src/components/PolymarketCard.jsx',
-            './src/components/KalshiCard.jsx',
+            './src/components/market/PolymarketCard.jsx',
+            './src/components/market/KalshiCard.jsx',
             './src/components/charts/ProbabilityChart.jsx',
             './src/components/charts/VolumeChart.jsx'
           ],
           'chunk-analysis': [
             './src/components/charts/TrendAnalysisChart.jsx',
             './src/components/charts/CandlestickChart.jsx',
-            './src/components/SignalAnalyticsDashboard.jsx'
+            './src/components/signals/SignalAnalyticsDashboard.jsx'
           ],
           'chunk-detail': [
-            './src/components/MarketDetailPage.jsx',
-            './src/components/MarketComparisonPage.jsx',
-            './src/components/MarketFilterPanel.jsx'
+            './src/components/pages/MarketDetailPage.jsx',
+            './src/components/pages/MarketComparisonPage.jsx',
+            './src/components/market/MarketFilterPanel.jsx'
           ],
           'chunk-skeletons': [
             './src/components/skeletons/MarketCardSkeleton.jsx',

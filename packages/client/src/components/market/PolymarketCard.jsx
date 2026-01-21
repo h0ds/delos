@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { TrendingUp, TrendingDown, Zap } from 'lucide-react'
-import { OracleVisualization } from './OracleVisualization'
+import { Tooltip } from '@/components/ui/tooltip'
+import { OracleVisualization } from '@/components/layout/OracleVisualization'
 import { useMarketUpdates } from '@/lib/useMarketUpdates'
 
-function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
+function PolymarketCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
   const { getMarketUpdate } = useMarketUpdates()
   const [liveMarket, setLiveMarket] = useState(market)
   const [priceFlash, setPriceFlash] = useState(false)
   const [lastUpdateId, setLastUpdateId] = useState(null)
 
-  const marketId = `kalshi:${market.market}`
+  const marketId = `polymarket:${market.market}`
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -70,18 +71,18 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
       )}
 
       {/* Content Section */}
-      <div className="relative p-4 space-y-4">
+      <div className="relative p-4 space-y-2">
         {/* Title */}
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors duration-300">
+          <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-3 group-hover:text-primary transition-colors duration-300">
             {liveMarket.question}
           </h3>
           {/* {liveMarket.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{liveMarket.description}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">{liveMarket.description}</p>
           )} */}
         </div>
 
-        {/* Probability Bars - Match Polymarket format */}
+        {/* Probability Bars */}
         {liveMarket.outcomes && liveMarket.outcomes.length > 0 && (
           <div className="space-y-3 py-2 border-t border-border/30 border-b border-border/30">
             {liveMarket.outcomes.slice(0, 2).map((outcome, idx) => {
@@ -141,7 +142,7 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
           )}
           {liveMarket.liquidity > 0 && (
             <div className="bg-muted/20 rounded-lg p-2.5 border border-border/30 hover:border-primary/30 transition-colors">
-              <p className="text-muted-foreground font-mono text-xs mb-1">Open Interest</p>
+              <p className="text-muted-foreground font-mono text-xs mb-1">Liquidity</p>
               <p className="text-sm font-semibold font-mono text-primary">
                 ${(liveMarket.liquidity / 1000).toFixed(0)}K
               </p>
@@ -152,11 +153,12 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
         {/* Status Badge + Research Button */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Market Source Badge - Kalshi */}
-            <span className="text-xs font-mono px-2.5 py-1.5 rounded-squircle bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15 transition-all">
-              Kalshi
+            {/* Market Source Badge - Polymarket */}
+            <span className="text-xs font-mono px-2.5 py-1.5 rounded-squircle bg-blue-500/10 text-blue-400 hover:bg-blue-500/15 transition-all">
+              Polymarket
             </span>
 
+            {/* Status Badge - Squircle Style */}
             {liveMarket.status && (
               <span
                 className={`text-xs font-mono px-2.5 py-1.5 rounded-squircle transition-all ${
@@ -196,11 +198,11 @@ function KalshiCardInner({ market, onQuickResearch, onSelectMarket, loading }) {
   )
 }
 
-export const KalshiCard = React.memo(KalshiCardInner, (prevProps, nextProps) => {
+export const PolymarketCard = React.memo(PolymarketCardInner, (prevProps, nextProps) => {
   // Custom comparison: only re-render if market.market id changed
   return (
     prevProps.market?.market === nextProps.market?.market && prevProps.loading === nextProps.loading
   )
 })
 
-KalshiCard.displayName = 'KalshiCard'
+PolymarketCard.displayName = 'PolymarketCard'

@@ -4,20 +4,20 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Search, AlertCircle } from 'lucide-react'
-import { OracleHeader } from '@/components/OracleHeader'
-import { OracleVisualization } from '@/components/OracleVisualization'
-import { PolymarketCard } from '@/components/PolymarketCard'
-import { KalshiCard } from '@/components/KalshiCard'
-import { SignalsSidebar } from '@/components/SignalsSidebar'
-import { SearchAutocomplete } from '@/components/SearchAutocomplete'
+import { OracleHeader } from '@/components/layout/OracleHeader'
+import { OracleVisualization } from '@/components/layout/OracleVisualization'
+import { PolymarketCard } from '@/components/market/PolymarketCard'
+import { KalshiCard } from '@/components/market/KalshiCard'
+import { SignalsSidebar } from '@/components/signals/SignalsSidebar'
+import { SearchAutocomplete } from '@/components/signals/SearchAutocomplete'
 import { MarketCardSkeleton } from '@/components/skeletons/MarketCardSkeleton'
 import { SignalListSkeleton } from '@/components/skeletons/SignalListSkeleton'
 import { useMarkets, useSignalSearch, usePageNavigation, useSocketConnection } from '@/hooks'
 
 // Lazy-loaded components for route-based code splitting
-const MarketDetailPage = lazy(() => import('@/components/MarketDetailPage'))
-const MarketComparisonPage = lazy(() => import('@/components/MarketComparisonPage'))
-const MarketFilterPanel = lazy(() => import('@/components/MarketFilterPanel'))
+const MarketDetailPage = lazy(() => import('@/components/pages/MarketDetailPage'))
+const MarketComparisonPage = lazy(() => import('@/components/pages/MarketComparisonPage'))
+const MarketFilterPanel = lazy(() => import('@/components/market/MarketFilterPanel'))
 
 // Fallback component for lazy loading
 const LazyLoadFallback = () => (
