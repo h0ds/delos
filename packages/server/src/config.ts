@@ -26,7 +26,6 @@ export const config = {
   enableGoogleNews: process.env.ENABLE_GOOGLE_NEWS !== 'false',
   enableReddit: process.env.ENABLE_REDDIT !== 'false',
   useNewPolymarketAPI: process.env.USE_NEW_POLYMARKET_API === 'true',
-  useMockData: process.env.USE_MOCK_DATA === 'true',
   aiApiProvider: process.env.AI_API_PROVIDER || 'deepseek',
   hasAiApi: !!process.env.DEEPSEEK_API_KEY,
   hasPolymarketApi: !!process.env.POLYMARKET_API_KEY,

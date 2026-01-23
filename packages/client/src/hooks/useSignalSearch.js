@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react'
 import { socket } from '@/lib/socket'
-import { generateMockSignals } from '@/lib/mockData'
 
 /**
  * Hook for managing signal search and analysis
- * Handles REST API, WebSocket fallback, and mock data
+ * Handles REST API and WebSocket fallback
  */
 export const useSignalSearch = () => {
   const [signals, setSignals] = useState([])
@@ -34,25 +33,22 @@ export const useSignalSearch = () => {
     return false
   }, [])
 
-  const performSearch = useCallback(
-    async queryText => {
-      setLoading(true)
-      setSearchedQuery(queryText)
+   const performSearch = useCallback(
+     async queryText => {
+       setLoading(true)
+       setSearchedQuery(queryText)
 
-      // Try REST API first, fallback to WebSocket, then mock data
-      const success = await fetchSignalsFromAPI(queryText)
-      if (!success && connected) {
-        // Fallback to WebSocket
-        socket.emit('signal:query', queryText)
-      } else if (!success) {
-        // Fallback to mock data
-        const mockSignals = generateMockSignals(queryText, 25)
-        setSignals(mockSignals)
-        setLoading(false)
-      }
-    },
-    [fetchSignalsFromAPI, connected]
-  )
+       // Try REST API first, fallback to WebSocket
+       const success = await fetchSignalsFromAPI(queryText)
+       if (!success && connected) {
+         // Fallback to WebSocket
+         socket.emit('signal:query', queryText)
+       } else if (!success) {
+         setLoading(false)
+       }
+     },
+     [fetchSignalsFromAPI, connected]
+   )
 
   return {
     signals,

@@ -88,11 +88,11 @@ export function validateSignalQuality(signals: Signal[]): {
 } {
   const warnings: string[] = []
 
-  // Check signal count
-  if (signals.length === 0) {
-    warnings.push('No signals available - using mock data or API is down')
-  } else if (signals.length < 5) {
-    warnings.push(`Low signal count (${signals.length}) - limited data available`)
+   // Check signal count
+   if (signals.length === 0) {
+     warnings.push('No signals available - data sources may be down')
+   } else if (signals.length < 5) {
+     warnings.push(`Low signal count (${signals.length}) - limited data available`)
   }
 
   // Check freshness

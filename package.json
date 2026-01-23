@@ -8,7 +8,7 @@
     "packages/server"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w @delos/client\" \"npm run dev -w @delos/server\"",
+    "dev": "./dev.sh",
     "dev:client": "npm run dev -w @delos/client",
     "dev:server": "npm run dev -w @delos/server",
     "build": "npm run build -w @delos/client && npm run build -w @delos/server",

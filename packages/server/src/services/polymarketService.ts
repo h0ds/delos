@@ -1,8 +1,6 @@
 import axios from 'axios'
 import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
-import { config } from '../config.js'
-import { getMockPolymarkets } from './mockMarkets.js'
 
 export interface PolymarketRawMarket {
   id: string
@@ -118,29 +116,17 @@ export async function getFeaturedMarkets(): Promise<PolymarketSignal[]> {
       })
       .slice(0, 8)
 
-    console.log(`[polymarket] ✅ filtered to ${activeMarkets.length} featured live markets`)
+     console.log(`[polymarket] ✅ filtered to ${activeMarkets.length} featured live markets`)
 
-    if (activeMarkets.length > 0) {
-      return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
-    }
+     if (activeMarkets.length > 0) {
+       return activeMarkets.map((m: any) => rawMarketToSignal(m, ''))
+     }
 
-    // If no live markets found, use mock data
-    console.log('[polymarket] ⚠️  no live markets found, using mock data')
-    if (config.isDev) {
-      return getMockPolymarkets()
-    }
-
-    return []
-  } catch (error) {
-    console.error('[polymarket:featured] ❌ ERROR:', error instanceof Error ? error.message : error)
-    console.log('[polymarket] 💡 falling back to mock data for local development')
-
-    // Use mock data in development when APIs are unavailable
-    if (config.isDev) {
-      return getMockPolymarkets()
-    }
-
-    return []
+     console.log('[polymarket] ⚠️  no live markets found')
+     return []
+   } catch (error) {
+     console.error('[polymarket:featured] ❌ ERROR:', error instanceof Error ? error.message : error)
+     return []
   }
 }
 

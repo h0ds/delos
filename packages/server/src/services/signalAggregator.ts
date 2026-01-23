@@ -1,8 +1,7 @@
 import axios from 'axios'
 import NodeCache from 'node-cache'
-import { config } from '../config.js'
-import { generateMockSignals } from './mockSignals.js'
 import type { Signal } from '../types.js'
+import { config } from '../config.js'
 
 const cache = new NodeCache({ stdTTL: 300 })
 
@@ -298,22 +297,14 @@ function extractMarkets(query: string, title: string): string[] {
 
 export async function acquireSignals(query: string): Promise<Signal[]> {
   // Check cache first
-  const cacheKey = `sig_${query.toLowerCase().replace(/\s+/g, '_')}`
-  const cached = cache.get<Signal[]>(cacheKey)
-  if (cached) {
-    console.log(`[cache] ✅ cache hit for "${query}" (${cached.length} signals)`)
-    return cached
-  }
+   const cacheKey = `sig_${query.toLowerCase().replace(/\s+/g, '_')}`
+   const cached = cache.get<Signal[]>(cacheKey)
+   if (cached) {
+     console.log(`[cache] ✅ cache hit for "${query}" (${cached.length} signals)`)
+     return cached
+   }
 
-  // Use mock data if enabled
-  if (config.useMockData) {
-    console.log(`[aggregator] 🎭 generating mock signals for "${query}"`)
-    const mockSignals = generateMockSignals(query, 25)
-    cache.set(cacheKey, mockSignals)
-    return mockSignals
-  }
-
-  console.log(`[aggregator] 📡 acquiring signals for "${query}"`)
+   console.log(`[aggregator] 📡 acquiring signals for "${query}"`)
   const [news, google, reddit] = await Promise.all([
     fetchNewsAPI(query),
     fetchGoogleNews(query),

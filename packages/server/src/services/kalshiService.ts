@@ -1,8 +1,6 @@
 import axios from 'axios'
 import { Agent as HttpAgent } from 'http'
 import { Agent as HttpsAgent } from 'https'
-import { config } from '../config.js'
-import { getMockKalshiMarkets } from './mockMarkets.js'
 
 export interface KalshiRawMarket {
   id: string
@@ -127,7 +125,6 @@ function calculateDataFreshness(createdDate?: string): {
 /**
  * Fetch all featured/hot markets from Kalshi for dashboard display
  * Public API - no authentication required
- * Uses mock data in dev when API is unavailable
  */
 export async function getFeaturedMarkets(): Promise<KalshiSignal[]> {
   try {
@@ -163,31 +160,25 @@ export async function getFeaturedMarkets(): Promise<KalshiSignal[]> {
       .slice(0, 8)
 
     return featuredMarkets
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error)
-    console.error('[kalshi] ❌ error fetching markets:', errorMsg)
+   } catch (error) {
+     const errorMsg = error instanceof Error ? error.message : String(error)
+     console.error('[kalshi] ❌ error fetching markets:', errorMsg)
 
-    // Detailed error logging for debugging
-    if (errorMsg.includes('ENOTFOUND')) {
-      console.error('[kalshi] ⚠️  DNS resolution failed - API domain unreachable')
-      console.error(
-        '[kalshi] 💡 Try: Check network connectivity, firewall rules, or DNS configuration'
-      )
-    } else if (errorMsg.includes('ECONNREFUSED')) {
-      console.error('[kalshi] ⚠️  Connection refused - API may be down')
-    } else if (errorMsg.includes('ECONNRESET')) {
-      console.error('[kalshi] ⚠️  Connection reset - unstable network')
-    } else if (errorMsg.includes('timeout')) {
-      console.error('[kalshi] ⚠️  Request timeout - API response delayed')
-    }
+     // Detailed error logging for debugging
+     if (errorMsg.includes('ENOTFOUND')) {
+       console.error('[kalshi] ⚠️  DNS resolution failed - API domain unreachable')
+       console.error(
+         '[kalshi] 💡 Try: Check network connectivity, firewall rules, or DNS configuration'
+       )
+     } else if (errorMsg.includes('ECONNREFUSED')) {
+       console.error('[kalshi] ⚠️  Connection refused - API may be down')
+     } else if (errorMsg.includes('ECONNRESET')) {
+       console.error('[kalshi] ⚠️  Connection reset - unstable network')
+     } else if (errorMsg.includes('timeout')) {
+       console.error('[kalshi] ⚠️  Request timeout - API response delayed')
+     }
 
-    // Use mock data in development when API is unavailable
-    if (config.isDev) {
-      console.log('[kalshi] 💡 using mock data for local development')
-      return getMockKalshiMarkets()
-    }
-
-    return []
+     return []
   }
 }
 
